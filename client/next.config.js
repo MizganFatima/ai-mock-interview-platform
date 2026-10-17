@@ -1,10 +1,19 @@
-/** @type {import('Next').NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/auth',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:50000/api/:path*', // Yahan 5000 ki jagah 50000 kar dein
+        destination: 'http://localhost:50000/api/:path*',
       },
     ];
   },
