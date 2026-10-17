@@ -23,7 +23,7 @@ export default function AuthPage() {
         localStorage.setItem('user', JSON.stringify({ email, name: name || 'Mizgan Fatima' }));
 
         if (isForgot) {
-            setMessage('Password reset successful! Please login.');
+            setMessage ('Password reset successful! Please login.');
             setIsForgot(false);
             setIsLogin(true);
         } else if (isLogin) {
