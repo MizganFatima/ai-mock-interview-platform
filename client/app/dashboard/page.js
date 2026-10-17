@@ -342,7 +342,7 @@ export default function DashboardPage() {
             {/* Footer */}
             <footer style={{ borderTop: '1px solid #e2e8f0', backgroundColor: '#ffffff', padding: '20px 20px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
                 <p style={{ margin: '0 0 4px 0', fontWeight: '700', color: '#0f172a' }}>AI-Powered Mock Interview Platform & Skill Evaluator © 2026</p>
-                <p style={{ margin: 0 }}>Professional Web Development Internship Submission</p>
+                <p style={{ margin: 0 }}>Professional Web  Development Internship Submission</p>
             </footer>
 
         </div>
