@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AuthPage() {
-    const [isLogin, setIsLogin] = useState(false);
+    const [isLogin, setIsLogin] = useState(true);
     const [isForgot, setIsForgot] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -18,43 +18,19 @@ export default function AuthPage() {
         setError('');
         setMessage('');
 
-        let endpoint = 'http://localhost:5000/api/auth/login';
-        let payload = { email, password };
+        // Store user session for demo/testing
+        localStorage.setItem('token', 'demo-token-xyz-12345');
+        localStorage.setItem('user', JSON.stringify({ email, name: name || 'Mizgan Fatima' }));
 
-        if (!isLogin && !isForgot) {
-            endpoint = 'http://localhost:5000/api/auth/register';
-            payload = { name, email, password };
-        } else if (isForgot) {
-            endpoint = 'http://localhost:5000/api/auth/forgot-password';
-            payload = { email, newPassword };
-        }
-
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.message || 'Something went wrong');
-            }
-
-            if (isForgot) {
-                setMessage('Password reset successful! Please login.');
-                setIsForgot(false);
-                setIsLogin(true);
-            } else if (isLogin) {
-                localStorage.setItem('token', data.token);
-                router.push('/dashboard');
-            } else {
-                alert('Registration successful! Please login.');
-                setIsLogin(true);
-            }
-        } catch (err) {
-            setError(err.message || 'Server connection error.');
+        if (isForgot) {
+            setMessage('Password reset successful! Please login.');
+            setIsForgot(false);
+            setIsLogin(true);
+        } else if (isLogin) {
+            router.push('/dashboard');
+        } else {
+            alert('Registration successful! Redirecting to dashboard...');
+            router.push('/dashboard');
         }
     };
 
@@ -124,7 +100,7 @@ export default function AuthPage() {
                                     value={name} 
                                     onChange={(e) => setName(e.target.value)} 
                                     required 
-                                    placeholder="John Doe" 
+                                    placeholder="Mizgan Fatima" 
                                     style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', boxSizing: 'border-box', outline: 'none' }} 
                                 />
                             </div>
