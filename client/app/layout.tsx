@@ -1,5 +1,3 @@
-import './globals.css'; // agar aapki global CSS file hai toh
-
 export const metadata = {
   title: 'AI Mock Interview Platform',
   description: 'AI-Powered Mock Interview Platform for ElevanceSkills',
