@@ -15,12 +15,13 @@ const leaderboardData = [
     { rank: 3, name: "Rohan Gupta", score: 1250, streak: 7, badge: "Code Wizard" }
 ];
 
-// Generate Dynamic Coding Challenge using Google Gemini AI
+// Generate Dynamic Coding Challenge using Google Gemini AI with Anti-Repeat Support
 router.post('/generate', async (req, res) => {
     try {
-        const { language, difficulty } = req.body;
+        const { language, difficulty, excludeProblems } = req.body;
         const targetLang = language || 'JavaScript';
         const targetDiff = difficulty || 'Medium';
+        const excludedList = excludeProblems || [];
 
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
@@ -31,6 +32,9 @@ router.post('/generate', async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Generate a unique ${targetDiff} level coding problem in ${targetLang}. 
+CRITICAL ANTI-REPEAT INSTRUCTION: Do NOT generate any problem or title similar to these previously asked problems:
+${JSON.stringify(excludedList)}
+
 Return ONLY a valid JSON object with these exact keys:
 {
   "title": "Problem Name",
@@ -48,7 +52,7 @@ Return ONLY a valid JSON object with these exact keys:
         
         res.json({ success: true, problem });
     } catch (err) {
-        console.log("Arena AI Gen Error:", err.message);
+        console.log("Arena AI Gen Error (Using Fallback):", err.message);
         
         // Dynamic rotating questions so it changes every time even on fallback
         const dynamicList = [

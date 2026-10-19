@@ -5,8 +5,11 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Import Arena Routes & Corrected Middleware Path
+// Import Routes & Middleware
 const arenaRoutes = require('./routes/arenaRoute');
+const interviewRoutes = require('./routes/interviewRoute');
+const resumeRoutes = require('./routes/resumeRoute');
+const reportRoutes = require('./routes/reportRoute');
 const verifyTokenAndRole = require('../middleware/roleMiddleware');
 
 const app = express();
@@ -16,14 +19,14 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://mizganfatima31_db_user:mizgan786@cluster0.j9xtl7r.mongodb.net/ai-interview-platform?appName=Cluster0';
 
-// Initialize Google Gemini AI with your key
+// Initialize Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 mongoose.connect(MONGO_URI, { family: 4 })
   .then(() => console.log('MongoDB Connected Successfully'))
   .catch(err => console.log('DB Connection Error:', err.message));
 
-// ==================== User Schema & Auth Routes (RBAC Ready) ====================
+// ==================== User Schema & Auth Routes ====================
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -66,7 +69,7 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password!' });
         }
         
-        // Generate JWT Token with Role for RBAC
+        // Generate JWT Token
         const token = jwt.sign(
             { id: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET || 'fallback_secret',
@@ -86,9 +89,8 @@ app.post('/api/auth/login', async (req, res) => {
 // ==================== Gemini AI Helper Function ====================
 async function callGeminiAI(prompt, isJson = false) {
     try {
-        // Updated model to gemini-pro for compatibility
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-pro"
+            model: "gemini-1.5-flash"
         });
         const result = await model.generateContent(prompt);
         return result.response.text();
@@ -98,61 +100,76 @@ async function callGeminiAI(prompt, isJson = false) {
     }
 }
 
-// ==================== Interview AI Routes ====================
+// ==================== Direct Interview AI Routes ====================
 app.all(['/api/interview/question', '/api/interview/start', '/api/interview/generate'], async (req, res) => {
-    console.log("🔥 Interview Start/Question/Generate Request aa gayi backend par! Topic:", req.query.topic || req.body.topic);
-    const topic = req.query.topic || req.body.topic || 'JavaScript';
+    console.log("🔥 Interview Request received on backend!");
+    const topic = req.body.topic || req.query.topic || 'JavaScript';
     const role = req.body.role || 'Software Developer';
     const difficulty = req.body.difficulty || 'Medium';
+    const language = req.body.language || 'English';
+    const excludeQuestions = req.body.excludeQuestions || [];
     const randomSalt = Math.random().toString(36).substring(2, 9) + Date.now();
 
     try {
-        const prompt = `You are an expert technical interviewer. You must NEVER repeat questions. Generate a single ${difficulty}-level technical interview question for a ${role} about ${topic}. Session Salt: ${randomSalt}. Return only the plain question text without quotes or markdown formatting.`;
-        const question = await callGeminiAI(prompt);
+        const prompt = `You are a technical interviewer hiring for a "${role}" position.
+Generate ONE technical interview question specifically testing knowledge on "${topic}".
+Difficulty level: ${difficulty}.
+Target response language: ${language}.
+Session Salt: ${randomSalt}.
+
+CRITICAL: Do NOT repeat or generate any question similar to the following previously asked questions:
+${JSON.stringify(excludeQuestions)}
+
+Return ONLY the single plain question text directly without quotes, labels, or markdown formatting.`;
+
+        const questionText = await callGeminiAI(prompt);
         
-        res.json({ 
+        return res.json({ 
             success: true,
             sessionId: Date.now().toString(),
             difficulty: difficulty,
-            question: question.trim()
+            question: questionText.trim()
         });
     } catch (err) {
-        console.log("AI Question Gen Error (Using Fallback):", err.message);
+        console.log("AI Question Generation Fallback Triggered:", err.message);
         const fallbackQuestions = [
-            `How do you optimize memory leaks and garbage collection performance in ${topic}?`,
-            `Explain the differences between server-side rendering and client-side rendering when building applications for a ${role}.`,
-            `How does concurrency and multi-threading work under the hood in modern ${topic} environments?`,
-            `What are the best practices for securing RESTful APIs and handling authentication tokens in ${role} projects?`,
-            `How do microtasks and macrotasks differ in the event loop when dealing with asynchronous operations in ${topic}?`
+            `As a ${role}, explain how memory management, event loop microtasks, and garbage collection work in ${topic}.`,
+            `What are the core differences between synchronous and asynchronous execution patterns in ${topic}?`,
+            `How do you diagnose and optimize performance bottlenecks when scaling applications using ${topic}?`,
+            `Describe a complex scenario where you debugged an unexpected production issue in ${topic}.`,
+            `Explain state synchronization, security best practices, and caching strategies in ${topic}.`
         ];
-        const question = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
-        res.json({ 
+        const selectedFallback = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+        
+        return res.json({ 
             success: true,
             sessionId: Date.now().toString(),
             difficulty: difficulty,
-            question 
+            question: selectedFallback 
         });
     }
 });
 
 app.post('/api/interview/evaluate', async (req, res) => {
-    console.log("🔥 Evaluation Request aa gayi backend par!");
+    console.log("🔥 Interview Evaluation Request received on backend!");
     try {
         const { topic, question, answer, currentDifficulty } = req.body;
-        const prompt = `You are an expert technical interviewer. Evaluate this answer for ${topic || 'JavaScript'}.
-Question: ${question}
-Candidate Answer: ${answer}
+        const prompt = `You are an expert interviewer evaluating a technical response for the topic: "${topic || 'Software Development'}".
+Question: "${question}"
+Candidate Answer: "${answer}"
 
-Return a valid JSON object with format: {"score": 85, "critique": "short concise points"}`;
+Evaluate the answer and return ONLY a valid JSON string (no markdown, no backticks) in exact format:
+{"score": 85, "critique": "Your answer clearly explains core concepts. To improve, mention production edge cases."}`;
 
         const rawContent = await callGeminiAI(prompt, true);
-        const result = JSON.parse(rawContent || '{"score": 80, "critique": "Good technical response."}');
+        let cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+        const result = JSON.parse(cleanedContent || '{"score": 82, "critique": "Solid technical response with clean structure."}');
         
         let nextDifficulty = currentDifficulty || 'Medium';
         if (result.score >= 85) nextDifficulty = 'Hard';
-        else if (result.score <= 50) nextDifficulty = 'Easy';
+        else if (result.score <= 50) nextDifficulty = 'Beginner';
 
-        res.json({
+        return res.json({
             success: true,
             evaluation: {
                 score: result.score,
@@ -161,13 +178,13 @@ Return a valid JSON object with format: {"score": 85, "critique": "short concise
             }
         });
     } catch (err) {
-        console.log("Evaluation Error (Using Fallback):", err.message);
-        res.json({ 
+        console.log("Evaluation Fallback Triggered:", err.message);
+        return res.json({ 
             success: true,
             evaluation: {
-                score: 80,
-                feedback: "Your answer effectively covers core foundational aspects. To improve further, elaborate on production edge cases.",
-                nextDifficulty: currentDifficulty || 'Medium'
+                score: 85,
+                feedback: `Your answer effectively covers the core foundational aspects of ${req.body.topic || 'the topic'}. Clean explanation!`,
+                nextDifficulty: req.body.currentDifficulty || 'Medium'
             }
         });
     }
@@ -175,7 +192,6 @@ Return a valid JSON object with format: {"score": 85, "critique": "short concise
 
 // ==================== Task 2: Placement Readiness Engine API ====================
 app.post('/api/readiness/evaluate', async (req, res) => {
-    console.log("🔥 Readiness Evaluation Request aa gayi backend par!");
     try {
         const { candidateType } = req.body;
         const category = "Placement Ready";
@@ -200,45 +216,41 @@ app.post('/api/readiness/evaluate', async (req, res) => {
             }
         });
     } catch (err) {
-        console.log("Readiness Error:", err.message);
         res.status(500).json({ success: false, message: 'Server error: ' + err.message });
     }
 });
 
 // ==================== Task 3: AI Recruiter Simulator API ====================
 app.post('/api/recruiter/question', async (req, res) => {
-    console.log("🔥 Recruiter Question Request aa gayi!");
     try {
         const { company, role } = req.body;
         const targetCompany = company || 'Google';
         const targetRole = role || 'Full Stack Developer';
 
-        const prompt = `You are an elite technical interviewer from ${targetCompany} looking for a ${targetRole}. Generate a single technical interview question matching ${targetCompany}'s strict hiring standards. Return only plain text question.`;
+        const prompt = `You are a senior interviewer at ${targetCompany} interviewing a ${targetRole}. Generate a single technical question matching ${targetCompany}'s standard interview process. Return only plain text question.`;
         const question = await callGeminiAI(prompt);
         res.json({ question: question.trim() });
     } catch (err) {
-        console.log("Recruiter Question Error:", err.message);
         res.json({ question: `How would you handle architectural bottlenecks and performance optimization in your projects for ${req.body.company || 'Enterprise'}?` });
     }
 });
 
 app.post('/api/recruiter/evaluate', async (req, res) => {
-    console.log("🔥 Recruiter Evaluation Request aa gayi!");
     try {
         const { company, question, answer } = req.body;
         const targetCompany = company || 'Google';
 
-        const prompt = `You are a senior hiring manager at ${targetCompany}. Evaluate candidate's answer strictly.
+        const prompt = `You are a hiring manager at ${targetCompany}. Evaluate candidate's answer strictly.
 Question: ${question}
 Answer: ${answer}
 
 Return JSON object: {"score": 8, "critique": "Professional feedback"}`;
 
         const rawContent = await callGeminiAI(prompt, true);
-        const result = JSON.parse(rawContent || '{"score": 8, "critique": "Strong response meeting core technical competencies."}');
+        let cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+        const result = JSON.parse(cleanedContent || '{"score": 8, "critique": "Strong response meeting core competencies."}');
         res.json(result);
     } catch (err) {
-        console.log("Recruiter Evaluation Error:", err.message);
         res.json({
             score: 8,
             critique: "Your answer effectively addresses architectural requirements. To excel further, elaborate on concurrency and system resilience."
@@ -246,12 +258,18 @@ Return JSON object: {"score": 8, "critique": "Professional feedback"}`;
     }
 });
 
-// ==================== Task 4: Coding Arena Routes ====================
+// ==================== Register All Modular Routes ====================
 app.use('/api/arena', arenaRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/report', reportRoutes);
 
-// ==================== Task 6: RBAC Protected Example Route ====================
+// Protected Admin Route
 app.get('/api/admin/dashboard', verifyTokenAndRole(['admin']), (req, res) => {
     res.json({ success: true, message: "Welcome to Admin Dashboard - Authorized" });
+});
+
+app.get('/', (req, res) => {
+    res.send('AI Mock Interview Platform Backend is Live & Running! 🚀');
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

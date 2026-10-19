@@ -38,19 +38,24 @@ async function callGeminiWithFallback(promptText, responseJsonFormat = false) {
     throw new Error("All Gemini models failed.");
 }
 
-// Start Interview Session & Generate First AI Question (With Custom Language Support)
+// Start Interview Session & Generate First AI Question (With Custom Language & Anti-Repeat Support)
 router.post('/start', verifyToken, async (req, res) => {
     try {
-        const { topic, role, difficulty, language } = req.body;
+        const { topic, role, difficulty, language, excludeQuestions } = req.body;
         const sessionId = Date.now().toString();
         const selectedTopic = topic || 'JavaScript';
         const selectedRole = role || 'Software Developer';
         const currentDiff = difficulty || 'Beginner';
         const selectedLanguage = language ? language.trim() : 'English';
+        const excludedList = excludeQuestions || [];
 
         const prompt = `You are an expert technical interviewer. Never repeat standard questions. Always generate a completely new, unique, and fresh technical question.
 Generate a single ${currentDiff}-level technical interview question for a ${selectedRole} focusing on ${selectedTopic}.
-CRITICAL INSTRUCTION: The question must be written entirely in the following language: "${selectedLanguage}". Return only the question text without extra quotes or formatting.`;
+
+CRITICAL ANTI-REPEAT INSTRUCTION: Do NOT repeat or generate anything similar to these previously asked questions:
+${JSON.stringify(excludedList)}
+
+CRITICAL LANGUAGE INSTRUCTION: The question must be written entirely in the following language: "${selectedLanguage}". Return only the question text without extra quotes or formatting.`;
 
         let firstQuestion;
         try {
@@ -70,10 +75,10 @@ CRITICAL INSTRUCTION: The question must be written entirely in the following lan
     }
 });
 
-// Evaluate Answer, Save to DB, & Generate Next Dynamic AI Question
+// Evaluate Answer, Save to DB, & Generate Next Dynamic AI Question (With Anti-Repeat)
 router.post('/evaluate', verifyToken, async (req, res) => {
     try {
-        const { sessionId, answer, currentDifficulty, topic, role, question, language } = req.body;
+        const { sessionId, answer, currentDifficulty, topic, role, question, language, excludeQuestions } = req.body;
         const userId = req.user ? req.user.id : null;
 
         if (!answer || answer.trim().length < 5) {
@@ -84,6 +89,7 @@ router.post('/evaluate', verifyToken, async (req, res) => {
         const selectedRole = role || 'Software Developer';
         const currentDiff = currentDifficulty || 'Beginner';
         const selectedLanguage = language ? language.trim() : 'English';
+        const excludedList = excludeQuestions || [];
 
         let score = 80;
         let feedbackText = "Strong technical explanation with clear understanding.";
@@ -98,7 +104,8 @@ Candidate Answer: ${answer}
 Provide feedback in strict JSON format like {"score": 85, "critique": "..."}`;
 
             const rawContent = await callGeminiWithFallback(evalPrompt, true);
-            const evaluationData = JSON.parse(rawContent);
+            let cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
+            const evaluationData = JSON.parse(cleanedContent);
             score = evaluationData.score || 80;
             feedbackText = evaluationData.critique || feedbackText;
         } catch (err) {
@@ -129,7 +136,11 @@ Provide feedback in strict JSON format like {"score": 85, "critique": "..."}`;
 
         const nextPrompt = `You are an expert technical interviewer. Never repeat questions. Always generate a completely new and unique question.
 The candidate just answered a question about ${selectedTopic}. Based on their performance, generate the next ${nextDifficulty}-level technical interview question for a ${selectedRole}.
-CRITICAL INSTRUCTION: The question must be written entirely in the following language: "${selectedLanguage}". Return only the question text.`;
+
+CRITICAL ANTI-REPEAT INSTRUCTION: Do NOT repeat or generate anything similar to these previously asked questions:
+${JSON.stringify(excludedList)}
+
+CRITICAL LANGUAGE INSTRUCTION: The question must be written entirely in the following language: "${selectedLanguage}". Return only the question text.`;
 
         let nextQuestion;
         try {
