@@ -17,11 +17,24 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://mizganfatima31_db_user:mizgan786@cluster0.j9xtl7r.mongodb.net/ai-interview-platform?appName=Cluster0';
 
-// Initialize Google Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// ==================== Secure Environment Variables ====================
+// Fetch MongoDB URI & Gemini Key purely from .env file
+const MONGO_URI = process.env.MONGO_URI;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
+if (!MONGO_URI) {
+    console.log("⚠️ Warning: MONGO_URI is missing in .env file!");
+}
+
+if (!GEMINI_API_KEY) {
+    console.log("⚠️ Warning: GEMINI_API_KEY is missing in .env file!");
+}
+
+// Initialize Google Gemini AI securely
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
+// Connect to MongoDB Database
 mongoose.connect(MONGO_URI, { family: 4 })
   .then(() => console.log('MongoDB Connected Successfully'))
   .catch(err => console.log('DB Connection Error:', err.message));
@@ -190,7 +203,7 @@ Evaluate the answer and return ONLY a valid JSON string (no markdown, no backtic
     }
 });
 
-// ==================== Task 2: Placement Readiness Engine API ====================
+// ==================== Placement Readiness Engine API ====================
 app.post('/api/readiness/evaluate', async (req, res) => {
     try {
         const { candidateType } = req.body;
@@ -220,7 +233,7 @@ app.post('/api/readiness/evaluate', async (req, res) => {
     }
 });
 
-// ==================== Task 3: AI Recruiter Simulator API ====================
+// ==================== AI Recruiter Simulator API ====================
 app.post('/api/recruiter/question', async (req, res) => {
     try {
         const { company, role } = req.body;

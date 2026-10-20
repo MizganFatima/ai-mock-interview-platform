@@ -58,6 +58,20 @@ export default function DashboardPage() {
             link: '/arena'
         },
         { 
+            id: 'resume',
+            title: 'AI Resume Analyzer', 
+            icon: '📄', 
+            desc: 'Evaluate skill gaps, optimize CV keywords, and get instant professional resume feedback.',
+            link: '/resume-analyzer'
+        },
+        { 
+            id: 'report',
+            title: 'PDF Performance Scorecard', 
+            icon: '📑', 
+            desc: 'Generate, view, and download comprehensive printable PDF analytics and evaluation reports.',
+            link: '/report'
+        },
+        { 
             id: 'security',
             title: 'Enterprise Security & Sessions', 
             icon: '🔐', 
@@ -122,7 +136,7 @@ export default function DashboardPage() {
                 <div>Secure Candidate Session</div>
             </div>
 
-            {/* Navigation Header with Home, Domains, Features, Pricing, Contact */}
+            {/* Navigation Header */}
             <header style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #e2e8f0', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => scrollToSection('home')}>
                     <div style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', color: '#ffffff', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '18px', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)' }}>
