@@ -7,9 +7,10 @@ const { GoogleGenAI } = require('@google/genai');
 // Google Gemini API Initialization using GEMINI_API_KEY from .env
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Helper function to call Gemini API with fallback models
+// Helper function to call Gemini API with updated fallback models (Primary: gemini-3.8-flash)
 async function callGeminiWithFallback(promptText, responseJsonFormat = false) {
     const modelsToTry = [
+        "gemini-3.8-flash",
         "gemini-2.5-flash",
         "gemini-2.5-pro",
         "gemini-1.5-flash"

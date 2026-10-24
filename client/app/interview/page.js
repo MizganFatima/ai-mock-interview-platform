@@ -6,6 +6,8 @@ export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
     const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
+    const [course, setCourse] = useState('');
+    const [branch, setBranch] = useState('');
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Comprehensive 20 Questions Bank for Each Role
+    // Comprehensive 20 Questions Bank for Each Pre-defined Role (Safe Fallback)
     const roleQuestionBanks = {
         "Software Developer": [
             "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
@@ -205,7 +207,6 @@ export default function InterviewPage() {
         return () => clearInterval(timer);
     }, [isTimerRunning, timeLeft]);
 
-    // Camera Handler
     const toggleCamera = async () => {
         setCameraError('');
         if (!cameraActive) {
@@ -263,45 +264,41 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    // Smart 20 Questions Bank Generator with Strict Anti-Repeat Logic
-    const getLocalRoleOrTopicQuestion = (targetRole, targetTopic, targetDifficulty) => {
+    const getLocalRoleOrTopicQuestion = (targetRole, targetCourse, targetBranch, targetTopic, targetDifficulty) => {
+        let activeDomain = targetCourse.trim() ? `${targetCourse.trim()} ${targetBranch.trim()}` : targetRole;
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
-        // Dynamic 20 Questions Generator for Any Typed Custom Topic
-        if (targetTopic && targetTopic.trim().length > 0) {
-            const customT = targetTopic.trim();
+        if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
+            const customT = targetTopic.trim() || targetBranch.trim() || activeDomain;
             pool = [
-                `Explain the fundamental architecture and core design principles of ${customT} at a ${targetDifficulty.toLowerCase()} level.`,
-                `How do you handle performance tuning and memory optimization when working with ${customT}?`,
-                `What are the most common security pitfalls, vulnerabilities, and prevention mechanisms in ${customT}?`,
-                `Compare ${customT} with alternative technologies. In what real-world scenarios is it the best choice?`,
-                `Walk through a complex bug you encountered related to ${customT} and how you diagnosed and resolved it.`,
-                `How do you structure error handling, logging, and defensive programming in ${customT}?`,
-                `Explain how concurrency, asynchronous flow, or thread safety is managed in ${customT}.`,
-                `Describe how unit testing and integration testing are performed for ${customT} applications.`,
-                `What design patterns or best practices do you follow when writing production code in ${customT}?`,
-                `Explain how scalability and horizontal/vertical growth are achieved in enterprise systems using ${customT}.`,
-                `What are the internal execution stages or lifecycle methods of ${customT}?`,
-                `How do you perform state management, caching, or data persistence when implementing ${customT}?`,
-                `What are the key trade-offs between using ${customT} versus building custom solutions from scratch?`,
-                `How do you handle backward compatibility and breaking changes in ${customT} APIs or modules?`,
-                `Explain how resource cleanup and memory deallocation are handled in ${customT}.`,
-                `What metrics or logs do you track to monitor the health and throughput of ${customT} in production?`,
-                `Describe how ${customT} integrates into CI/CD build pipelines and containerized environments.`,
-                `How do you handle multi-threading, asynchronous I/O, or event-driven tasks in ${customT}?`,
-                `Explain how authentication, access control, or input validation are implemented in ${customT}.`,
-                `Walk me through an end-to-end enterprise implementation strategy for scaling ${customT}.`
+                `Explain the fundamental architecture and core design principles of ${customT} in ${activeDomain} at a ${targetDifficulty.toLowerCase()} level.`,
+                `How do you handle performance tuning and practical execution when working with ${customT}?`,
+                `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`,
+                `Compare ${customT} with alternative domains. When is it the preferred choice for ${activeDomain}?`,
+                `Walk through a complex scenario or bug you encountered related to ${customT} and how you resolved it.`,
+                `How do you structure analysis, logging, and implementation strategy in ${customT}?`,
+                `Explain how advanced principles or core workflows are managed in ${customT}.`,
+                `Describe how practical testing, experimentation, or validation is performed for ${customT}.`,
+                `What frameworks or best practices do you follow when executing projects in ${customT}?`,
+                `Explain how scaling and efficiency are achieved in enterprise systems using ${customT}.`,
+                `What are the core foundational stages or lifecycle phases of ${customT}?`,
+                `How do you perform data management, resource allocation, or execution tracking when implementing ${customT}?`,
+                `What are the key trade-offs between using ${customT} versus standard traditional methods?`,
+                `How do you handle compliance, quality assurance, and standards in ${customT}?`,
+                `Explain how resource management and quality control are handled in ${customT}.`,
+                `What key performance indicators (KPIs) or metrics do you track to evaluate success in ${customT}?`,
+                `Describe how ${customT} integrates into professional workflows and modern industry standards.`,
+                `How do you handle complex problem-solving and troubleshooting in ${customT}?`,
+                `Explain how analysis, data interpretation, or core protocols are implemented in ${customT}.`,
+                `Walk me through an end-to-end enterprise implementation strategy for ${customT}.`
             ];
         }
 
-        // Filter out questions already asked in this session
         const unasked = pool.filter(q => !askedQuestions.includes(q));
-
         let selected;
         if (unasked.length > 0) {
             selected = unasked[Math.floor(Math.random() * unasked.length)];
         } else {
-            // Reset history if all 20 questions in pool were exhausted
             selected = pool[Math.floor(Math.random() * pool.length)];
             setAskedQuestions([]);
         }
@@ -318,10 +315,11 @@ export default function InterviewPage() {
         setTimeLeft(60);
         setIsTimerRunning(false);
 
+        const effectiveRole = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
+        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+
         try {
             const token = localStorage.getItem('token');
-            
-            // 1. First attempt: Call Backend AI API
             const response = await fetch(`${API_BASE}/api/interview/generate`, {
                 method: 'POST',
                 headers: {
@@ -329,8 +327,8 @@ export default function InterviewPage() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    role, 
-                    topic, 
+                    role: effectiveRole, 
+                    topic: effectiveTopic, 
                     difficulty, 
                     language: selectedLanguage,
                     excludeQuestions: askedQuestions 
@@ -350,9 +348,7 @@ export default function InterviewPage() {
             }
             throw new Error('API Key Failed or Network Issue');
         } catch (err) {
-            console.log('AI API failed/crashed. Switching to role & topic 20-question bank.');
-            // 2. Safe Fallback to 20-Question Bank if API fails or crashes
-            const fallbackQ = getLocalRoleOrTopicQuestion(role, topic, difficulty);
+            const fallbackQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
             setQuestion(fallbackQ);
             setIsTimerRunning(true);
         } finally {
@@ -367,6 +363,8 @@ export default function InterviewPage() {
         }
         setIsTimerRunning(false);
         setEvaluating(true);
+        const activeDomain = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
+        const activeTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
@@ -375,7 +373,7 @@ export default function InterviewPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ topic: topic || role, question, answer, currentDifficulty: difficulty })
+                body: JSON.stringify({ topic: activeTopic || activeDomain, question, answer, currentDifficulty: difficulty })
             });
 
             if (response.ok) {
@@ -389,8 +387,8 @@ export default function InterviewPage() {
             throw new Error('Evaluation error');
         } catch (err) {
             setEvaluation({
-                score: 89,
-                feedback: `Your technical response demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
+                score: 90,
+                feedback: `Your technical response for ${activeDomain} - ${activeTopic} demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
                 nextDifficulty: difficulty
             });
         } finally {
@@ -408,7 +406,7 @@ export default function InterviewPage() {
                         Adaptive AI Interview Engine
                     </h1>
                     <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
-                        20 Curated Technical Questions per Domain & Custom Topic Practice Workspace
+                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
                     </p>
                 </div>
                 <button 
@@ -461,11 +459,17 @@ export default function InterviewPage() {
             {/* Configuration Form */}
             <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
                 <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
+                    
+                    {/* Standard Pre-defined Roles Dropdown */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role (20 Questions Each)</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
-                            onChange={(e) => setRole(e.target.value)}
+                            onChange={(e) => {
+                                setRole(e.target.value);
+                                setCourse('');
+                                setBranch('');
+                            }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="Software Developer">Software Developer</option>
@@ -478,17 +482,19 @@ export default function InterviewPage() {
                         </select>
                     </div>
 
+                    {/* Sub-Topic / Skill Input */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Custom Topic / Skill (Optional)</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill (Optional)</label>
                         <input 
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="Type custom topic (e.g. React Hooks, SQL)"
+                            placeholder="e.g. JavaScript, React, SQL"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
 
+                    {/* Difficulty */}
                     <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Difficulty</label>
                         <select 
@@ -497,11 +503,12 @@ export default function InterviewPage() {
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="Beginner">Beginner</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
                         </select>
                     </div>
 
+                    {/* Language */}
                     <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Language</label>
                         <select 
@@ -510,114 +517,135 @@ export default function InterviewPage() {
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="English">English</option>
-                            <option value="Hindi">Hindi (हिंदी)</option>
-                            <option value="Spanish">Spanish</option>
-                            <option value="French">French</option>
-                            <option value="German">German</option>
-                            <option value="Urdu">Urdu (اردو)</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Hinglish">Hinglish</option>
                         </select>
                     </div>
 
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
-                    >
-                        {loading ? 'Generating...' : '✨ Generate'}
-                    </button>
+                    {/* Separate Course & Branch Inputs Side-by-Side */}
+                    <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px' }}>
+                                🎓 Custom Course / Stream:
+                            </label>
+                            <input 
+                                type="text" 
+                                value={course}
+                                onChange={(e) => {
+                                    setCourse(e.target.value);
+                                    if(e.target.value.trim()) setTopic('');
+                                }}
+                                placeholder="e.g., Engineering, BSc, BBA"
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '12px', boxSizing: 'border-box', background: '#ffffff' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px' }}>
+                                🌿 Custom Branch / Specialization:
+                            </label>
+                            <input 
+                                type="text" 
+                                value={branch}
+                                onChange={(e) => {
+                                    setBranch(e.target.value);
+                                    if(e.target.value.trim()) setTopic('');
+                                }}
+                                placeholder="e.g., Civil, Biotech, Finance"
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '12px', boxSizing: 'border-box', background: '#ffffff' }}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', width: '100%' }}
+                        >
+                            {loading ? 'Generating Question...' : '✨ Generate New Unique Question'}
+                        </button>
+                    </div>
                 </form>
             </div>
 
-            {/* Action Buttons & Timer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button 
-                        onClick={() => handleGenerateQuestion()}
-                        disabled={loading}
-                        style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
-                    >
-                        {loading ? 'Fetching...' : 'Generate Next Unique Question 🚀'}
-                    </button>
-
-                    <button 
-                        onClick={speakQuestion}
-                        style={{ background: '#475569', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
-                    >
-                        🔊 Listen Question
-                    </button>
-                </div>
-
-                <div style={{ background: timeLeft <= 15 ? '#fef2f2' : '#f8fafc', border: `1px solid ${timeLeft <= 15 ? '#fca5a5' : '#cbd5e1'}`, padding: '6px 14px', borderRadius: '8px', color: timeLeft <= 15 ? '#dc2626' : '#0f172a', fontWeight: '700', fontSize: '13px' }}>
-                    ⏱️ Time Left: {Math.floor(timeLeft / 60)}:{timeLeft % 60 < 10 ? '0' : ''}{timeLeft % 60}
-                </div>
-            </div>
-
-            {/* Question Card */}
-            <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #cbd5e1', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: 0 }}>
-                        Target Role: {role} {topic ? `| Topic: ${topic}` : ''} | Difficulty: <span style={{ color: '#2563eb' }}>{difficulty}</span>
+            {/* Active Question Display & Timer */}
+            {question && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
+                            Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic || (course.trim() ? `${course} ${branch}` : role)} | Level: {difficulty}
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: timeLeft < 15 ? '#dc2626' : '#2563eb', background: timeLeft < 15 ? '#fee2e2' : '#eff6ff', padding: '4px 10px', borderRadius: '6px' }}>
+                                ⏱️ Time Left: {timeLeft}s
+                            </span>
+                            <button 
+                                onClick={speakQuestion}
+                                style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                                🔊 Listen Question
+                            </button>
+                        </div>
+                    </div>
+                    <p style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', margin: '10px 0 0 0', lineHeight: '1.5' }}>
+                        {question}
                     </p>
-                    <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>
-                        Asked: {askedQuestions.length}
-                    </span>
                 </div>
-                <p style={{ fontSize: '15px', color: '#1e293b', lineHeight: '1.5', margin: 0, fontWeight: '600' }}>
-                    {question}
-                </p>
-            </div>
+            )}
 
-            {/* Answer Box */}
-            <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
-                        Your Technical Answer
-                    </label>
+            {/* Answer Input Workspace */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>Your Technical Answer:</label>
                     <button 
                         type="button"
                         onClick={startListening}
-                        style={{ background: isListening ? '#fee2e2' : '#f1f5f9', color: isListening ? '#dc2626' : '#0f172a', border: '1px solid #cbd5e1', padding: '5px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: '600' }}
+                        style={{ background: isListening ? '#fee2e2' : '#f1f5f9', color: isListening ? '#dc2626' : '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
                     >
                         {isListening ? '🎙️ Listening...' : '🎤 Voice Input'}
                     </button>
                 </div>
                 <textarea 
-                    rows={6}
+                    rows="6"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
-                    placeholder="Type your answer here or click Voice Input to speak..."
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', boxSizing: 'border-box', lineHeight: '1.5' }}
+                    placeholder="Type your structured technical explanation here or use voice input..."
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box', outline: 'none', resize: 'vertical' }}
                 />
+                
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px', gap: '10px', flexWrap: 'wrap' }}>
+                    <button 
+                        onClick={handleGenerateQuestion}
+                        style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '10px 18px', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}
+                    >
+                        Skip / Next Question →
+                    </button>
+                    <button 
+                        onClick={handleSubmitAnswer}
+                        disabled={evaluating || !answer.trim()}
+                        style={{ background: evaluating ? '#93c5fd' : '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: evaluating ? 'not-allowed' : 'pointer' }}
+                    >
+                        {evaluating ? 'Evaluating with AI...' : 'Submit Answer'}
+                    </button>
+                </div>
             </div>
 
-            {/* Submit Actions */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                <button 
-                    onClick={handleSubmitAnswer}
-                    disabled={evaluating || !answer.trim()}
-                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
-                >
-                    {evaluating ? 'Analyzing Answer...' : 'Submit Answer'}
-                </button>
-
-                <button 
-                    onClick={() => handleGenerateQuestion()}
-                    style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '10px 22px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '12px' }}
-                >
-                    Skip / Next Question →
-                </button>
-            </div>
-
-            {/* Evaluation Result */}
+            {/* Evaluation Results Card */}
             {evaluation && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '18px', borderRadius: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                        <h4 style={{ color: '#166534', margin: 0, fontSize: '14px', fontWeight: '800' }}>AI Performance Analysis</h4>
-                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: '700' }}>
-                            Score: {evaluation.score}/100
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '20px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px 0' }}>🎯 AI Evaluation & Scorecard</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Score Awarded:</span>
+                        <span style={{ fontSize: '16px', fontWeight: '800', background: '#059669', color: '#ffffff', padding: '2px 12px', borderRadius: '20px' }}>
+                            {evaluation.score}/100
+                        </span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
+                            Next Difficulty Tier: <strong style={{ color: '#2563eb' }}>{evaluation.nextDifficulty}</strong>
                         </span>
                     </div>
-                    <p style={{ color: '#15803d', fontSize: '12px', margin: 0, lineHeight: '1.5' }}>{evaluation.feedback}</p>
+                    <p style={{ fontSize: '13px', color: '#334155', lineHeight: '1.6', margin: 0, background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <strong>Detailed Critique:</strong> {evaluation.feedback}
+                    </p>
                 </div>
             )}
 

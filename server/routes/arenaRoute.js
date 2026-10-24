@@ -15,6 +15,32 @@ const leaderboardData = [
     { rank: 3, name: "Rohan Gupta", score: 1250, streak: 7, badge: "Code Wizard" }
 ];
 
+// Robust Helper Function for Arena AI Generation with Auto-Fallback
+async function callGeminiWithFallback(genAI, prompt) {
+    const modelsToTry = [
+        "gemini-3.8-flash",
+        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemini-flash",
+        "gemini-pro"
+    ];
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+        try {
+            console.log(`[Arena Route] Trying model: ${modelName}...`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            const textContent = result.response.text();
+            if (textContent) return textContent;
+        } catch (err) {
+            console.log(`⚠️ Arena Model ${modelName} failed:`, err.message);
+            lastError = err;
+        }
+    }
+    throw lastError || new Error("All Gemini models failed in Arena Route.");
+}
+
 // Generate Dynamic Coding Challenge using Google Gemini AI with Anti-Repeat Support
 router.post('/generate', async (req, res) => {
     try {
@@ -29,7 +55,6 @@ router.post('/generate', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Generate a unique ${targetDiff} level coding problem in ${targetLang}. 
 CRITICAL ANTI-REPEAT INSTRUCTION: Do NOT generate any problem or title similar to these previously asked problems:
@@ -43,8 +68,8 @@ Return ONLY a valid JSON object with these exact keys:
   "boilerplate": "// Write your code here"
 }`;
 
-        const result = await model.generateContent(prompt);
-        let textContent = result.response.text();
+        // Call Gemini AI using multi-model fallback helper
+        let textContent = await callGeminiWithFallback(genAI, prompt);
         
         // Clean markdown backticks
         textContent = textContent.replace(/```json/g, '').replace(/```/g, '').trim();

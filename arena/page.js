@@ -484,7 +484,7 @@ export default function ArenaPage() {
 
             <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '6px' }}>Coding Arena & AI Practice Hub</h1>
             <p style={{ color: '#64748b', marginBottom: '20px', fontSize: '13px', fontWeight: '500' }}>
-                20 Curated Algorithmic Problems Each for Easy, Medium, and Hard Levels (60+ Unique Challenges).
+                Curated Algorithmic Problems for Easy, Medium, and Hard Levels (60+ Unique Challenges).
             </p>
 
             {/* Controls */}
@@ -493,7 +493,10 @@ export default function ArenaPage() {
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '4px' }}>Preset Language</label>
                     <select 
                         value={language} 
-                        onChange={(e) => setLanguage(e.target.value)}
+                        onChange={(e) => {
+                            setLanguage(e.target.value);
+                            setCustomLanguageInput('');
+                        }}
                         style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', width: '180px', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
                     >
                         <option value="JavaScript">JavaScript</option>
@@ -516,15 +519,15 @@ export default function ArenaPage() {
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '4px' }}>Difficulty Level (20 Questions Each)</label>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '4px' }}>Difficulty Level</label>
                     <select 
                         value={difficulty} 
                         onChange={(e) => setDifficulty(e.target.value)}
                         style={{ padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', width: '180px', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
                     >
-                        <option value="Easy">Easy (20 Problems)</option>
-                        <option value="Medium">Medium (20 Problems)</option>
-                        <option value="Hard">Hard (20 Problems)</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
                     </select>
                 </div>
 
@@ -551,50 +554,36 @@ export default function ArenaPage() {
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', background: problem.difficulty === 'Easy' ? '#d1fae5' : problem.difficulty === 'Medium' ? '#fef3c7' : '#fee2e2', color: problem.difficulty === 'Easy' ? '#065f46' : problem.difficulty === 'Medium' ? '#92400e' : '#991b1b', fontWeight: '700' }}>
-                        {problem.difficulty}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: '700' }}>
-                        Language: {activeLang}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                        Solved in Session: {askedProblems.length}
-                    </span>
-                </div>
-
-                <p style={{ color: '#475569', margin: '0 0 16px 0', lineHeight: '1.6', fontSize: '13px', fontWeight: '500' }}>
+                <p style={{ color: '#475569', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>
                     {problem.description}
                 </p>
 
-                <label style={{ fontSize: '12px', marginBottom: '6px', color: '#475569', fontWeight: '600' }}>Solution Workspace ({activeLang})</label>
-                <textarea 
-                    rows="8" 
-                    value={code} 
-                    onChange={(e) => setCode(e.target.value)} 
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a', fontFamily: 'monospace', fontSize: '13px', boxSizing: 'border-box', outline: 'none', lineHeight: '1.5' }} 
-                />
+                {/* Code Editor Area */}
+                <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                        Code Workspace ({activeLang}):
+                    </label>
+                    <textarea 
+                        rows="12"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        style={{ width: '100%', fontFamily: 'monospace', fontSize: '13px', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#0f172a', color: '#38bdf8', boxSizing: 'border-box', outline: 'none', resize: 'vertical' }}
+                    />
+                </div>
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: '15px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                     <button 
-                        onClick={handleRunCode} 
-                        style={{ padding: '9px 18px', background: '#059669', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
+                        onClick={handleRunCode}
+                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
                     >
-                        Run Code & Test Cases
-                    </button>
-
-                    <button 
-                        onClick={handleGenerateProblem} 
-                        style={{ padding: '9px 18px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                        Skip / Next Question →
+                        ▶ Run Code & Test Cases
                     </button>
                 </div>
 
                 {output && (
-                    <div style={{ marginTop: '16px', padding: '14px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                        <h4 style={{ color: '#065f46', margin: '0 0 4px 0', fontSize: '13px', fontWeight: '700' }}>Execution Output:</h4>
-                        <p style={{ fontFamily: 'monospace', color: '#047857', margin: 0, fontSize: '12px' }}>{output}</p>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '14px' }}>
+                        <h4 style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', margin: '0 0 6px 0' }}>Execution Output:</h4>
+                        <p style={{ fontSize: '13px', color: '#334155', margin: 0, fontFamily: 'monospace' }}>{output}</p>
                     </div>
                 )}
             </div>
