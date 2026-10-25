@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Import Existing Modular Routes & Middleware
-const authRoutes = require('./routes/authRoute'); // 🚀 Fixed Capital 'R' for authRoute
+const authRoutes = require('./routes/authRoute'); 
 const arenaRoutes = require('./routes/arenaRoute');
 const resumeRoutes = require('./routes/resumeRoute');
 const reportRoutes = require('./routes/reportRoute'); 
@@ -217,7 +217,7 @@ Return JSON object: {"score": 8, "critique": "Professional feedback"}`;
 });
 
 // ==================== Register Modular Routes ====================
-app.use('/api/auth', authRoutes);    // 🚀 Registered Authentication Routes
+app.use('/api/auth', authRoutes);    // Authentication Routes (Direct Signup/Login)
 app.use('/api/arena', arenaRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/report', reportRoutes); 

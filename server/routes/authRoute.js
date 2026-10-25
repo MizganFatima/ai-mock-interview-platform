@@ -1,164 +1,115 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
-const otpStore = {}; 
+const JWT_SECRET = process.env.JWT_SECRET || 'ai_mock_interview_super_secret_key';
 
+// Configure Nodemailer Transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: process.env.EMAIL_USER, // Aapki email address
+        pass: process.env.EMAIL_PASS  // Aapka Gmail App Password
     }
 });
 
-// Register Route
-router.post('/register', async (req, res) => {
+// Signup Route
+router.post('/signup', async (req, res) => {
     try {
-        console.log("REGISTER BODY RECEIVED:", req.body);
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
         
-        const existingUser = await User.findOne({ email });
-        if (existingUser) return res.status(400).json({ error: 'User already exists with this email.' });
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ success: false, message: "User already exists with this email" });
+        }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        user = new User({ name, email, password });
+        await user.save();
 
-        const newUser = new User({
-            name,
-            email,
-            password: hashedPassword,
-            role: role || 'student'
+        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+
+        res.status(201).json({ 
+            success: true, 
+            message: "Signup successful!", 
+            token,
+            user: { id: user._id, name: user.name, email: user.email } 
         });
-
-        await newUser.save();
-        console.log("USER SAVED TO MONGODB SUCCESSFULLY!");
-        res.status(201).json({ success: true, message: 'User registered successfully!' });
     } catch (err) {
-        console.log("REGISTER ERROR:", err.message);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// 1. Login Request Route (Checks password & sends Login OTP)
-router.post('/login-request', async (req, res) => {
+// Login Route
+router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log("LOGIN REQUEST FOR:", email);
-
+        
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: 'Invalid credentials.' });
-
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        otpStore[email] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Login Verification OTP',
-            text: `Your OTP for login is: ${otp}. It is valid for 10 minutes.`
-        };
-
-        try {
-            await transporter.sendMail(mailOptions);
-        } catch (mailErr) {
-            console.log('Login OTP Fallback (Terminal):', otp);
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found with this email" });
         }
 
-        res.json({ success: true, message: 'OTP sent successfully to your email!' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// 2. Verify Login OTP Route (Completes login & returns token)
-router.post('/verify-login-otp', async (req, res) => {
-    try {
-        const { email, otp } = req.body;
-
-        const record = otpStore[email];
-        if (!record || record.otp !== otp || Date.now() > record.expiresAt) {
-            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        if (user.password !== password) {
+            return res.status(400).json({ success: false, message: "Incorrect password" });
         }
 
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found.' });
+        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
-        delete otpStore[email];
-
-        const token = jwt.sign(
-            { id: user._id, role: user.role, email: user.email }, 
-            process.env.JWT_SECRET || 'secretkey', 
-            { expiresIn: '1d' }
-        );
-
-        res.json({
-            success: true,
+        res.status(200).json({ 
+            success: true, 
+            message: "Login successful!", 
             token,
-            message: 'Login successful!',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role }
+            user: { id: user._id, name: user.name, email: user.email } 
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// Forgot Password - Send OTP
+// Forgot Password Route with Nodemailer
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'Email not registered with any account.' });
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        otpStore[email] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
-
-        try {
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Password Reset OTP',
-                text: `Your OTP for password reset is: ${otp}`
-            });
-        } catch (mailErr) {
-            console.log('Reset OTP Fallback (Terminal Code):', otp);
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found with this email" });
         }
 
-        res.json({ success: true, message: 'OTP sent successfully to your email!' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Reset Password - Verify OTP & Update
-router.post('/reset-password', async (req, res) => {
-    try {
-        const { email, otp, newPassword } = req.body;
-
-        const record = otpStore[email];
-        if (!record || record.otp !== otp || Date.now() > record.expiresAt) {
-            return res.status(400).json({ error: 'Invalid or expired OTP.' });
-        }
-
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found.' });
-
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
+        // Generate a secure reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
         await user.save();
 
-        delete otpStore[email];
+        // Create reset URL
+        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
 
-        res.json({ success: true, message: 'Password reset successful!' });
+        // Email Options
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: 'Password Reset Request - AI Mock Interview Platform',
+            html: `
+                <h3>You requested a password reset</h3>
+                <p>Please click on the following link to reset your password:</p>
+                <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+                <p>This link is valid for 1 hour.</p>
+            `
+        };
+
+        // Send Email
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Password reset link has been sent to your email successfully!" 
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
