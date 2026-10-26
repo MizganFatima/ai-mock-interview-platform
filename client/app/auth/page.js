@@ -44,24 +44,29 @@ export default function AuthPage() {
     };
 
     const handleForgotPassword = async () => {
-        if (!email) {
-            alert("Please enter your Email Address first above!");
-            return;
+        let targetEmail = email;
+        if (!targetEmail) {
+            targetEmail = prompt("Please enter your registered Email Address for password reset:");
+            if (!targetEmail) return;
         }
 
         try {
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            console.log("Sending forgot password request to:", `${baseUrl}/api/auth/forgot-password`);
+            
             const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email: targetEmail })
             });
 
             const data = await response.json();
+            console.log("Forgot password response:", data);
+
             if (response.ok && data.success) {
-                alert(data.message);
+                alert(data.message || "Password reset link sent to your email!");
             } else {
-                alert(data.message || "Failed to process request");
+                alert(data.message || data.error || "Failed to process request");
             }
         } catch (err) {
             console.error("Forgot password error:", err);
