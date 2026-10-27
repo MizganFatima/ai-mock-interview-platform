@@ -11,8 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ai_mock_interview_super_secret_key
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // Aapki email address
-        pass: process.env.EMAIL_PASS  // Aapka Gmail App Password
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -71,7 +71,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Forgot Password Route with Nodemailer
+// Forgot Password Route (Returning reset link directly to bypass Render SMTP timeout)
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -91,25 +91,12 @@ router.post('/forgot-password', async (req, res) => {
         const clientUrl = process.env.CLIENT_URL || 'https://ai-mock-interview-platform-tau.vercel.app';
         const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-        // Email Options
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: user.email,
-            subject: 'Password Reset Request - AI Mock Interview Platform',
-            html: `
-                <h3>You requested a password reset</h3>
-                <p>Please click on the following link to reset your password:</p>
-                <a href="${resetUrl}" target="_blank">${resetUrl}</a>
-                <p>This link is valid for 1 hour.</p>
-            `
-        };
-
-        // Send Email
-        await transporter.sendMail(mailOptions);
+        console.log("🔑 Generated Password Reset Link:", resetUrl);
 
         res.status(200).json({ 
             success: true, 
-            message: "Password reset link has been sent to your email successfully!" 
+            message: "Password reset link generated successfully!",
+            resetUrl: resetUrl 
         });
     } catch (err) {
         console.error("FORGOT PASSWORD ERROR DETAILS:", err);
