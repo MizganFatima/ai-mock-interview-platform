@@ -3,18 +3,8 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai_mock_interview_super_secret_key';
-
-// Configure Nodemailer Transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
 
 // Signup Route
 router.post('/signup', async (req, res) => {
@@ -71,7 +61,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Forgot Password Route (Returning reset link directly to bypass Render SMTP timeout)
+// Forgot Password Route (Returning reset link directly - No SMTP timeout)
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
