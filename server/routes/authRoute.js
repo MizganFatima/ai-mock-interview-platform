@@ -38,6 +38,7 @@ router.post('/signup', async (req, res) => {
             user: { id: user._id, name: user.name, email: user.email } 
         });
     } catch (err) {
+        console.error("SIGNUP ERROR DETAILS:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -65,6 +66,7 @@ router.post('/login', async (req, res) => {
             user: { id: user._id, name: user.name, email: user.email } 
         });
     } catch (err) {
+        console.error("LOGIN ERROR DETAILS:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -85,8 +87,9 @@ router.post('/forgot-password', async (req, res) => {
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
         await user.save();
 
-        // Create reset URL
-        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+        // Use environment CLIENT_URL or fallback to live Vercel frontend URL
+        const clientUrl = process.env.CLIENT_URL || 'https://ai-mock-interview-platform-tau.vercel.app';
+        const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
         // Email Options
         const mailOptions = {
@@ -109,6 +112,7 @@ router.post('/forgot-password', async (req, res) => {
             message: "Password reset link has been sent to your email successfully!" 
         });
     } catch (err) {
+        console.error("FORGOT PASSWORD ERROR DETAILS:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
