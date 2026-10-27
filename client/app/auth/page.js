@@ -8,6 +8,11 @@ export default function AuthPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    
+    // States for Forgot Password view toggle
+    const [showForgot, setShowForgot] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    
     const router = useRouter();
 
     const handleSubmit = async (e) => {
@@ -43,11 +48,11 @@ export default function AuthPage() {
         }
     };
 
-    const handleForgotPassword = async () => {
-        let targetEmail = email;
-        if (!targetEmail) {
-            targetEmail = prompt("Please enter your registered Email Address for password reset:");
-            if (!targetEmail) return;
+    const handleForgotPasswordSubmit = async (e) => {
+        e.preventDefault();
+        if (!forgotEmail) {
+            alert("Please enter your email address!");
+            return;
         }
 
         try {
@@ -57,7 +62,7 @@ export default function AuthPage() {
             const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: targetEmail })
+                body: JSON.stringify({ email: forgotEmail })
             });
 
             const data = await response.json();
@@ -65,6 +70,8 @@ export default function AuthPage() {
 
             if (response.ok && data.success) {
                 alert(data.message || "Password reset link sent to your email!");
+                setShowForgot(false);
+                setForgotEmail('');
             } else {
                 alert(data.message || data.error || "Failed to process request");
             }
@@ -78,73 +85,104 @@ export default function AuthPage() {
         <div style={styles.container}>
             <div style={styles.card}>
                 <div style={styles.badge}>AI</div>
-                <h2 style={styles.heading}>{isLogin ? "Welcome Back" : "Get Started"}</h2>
-                <p style={styles.subheading}>{isLogin ? "Login to access your interviews" : "Create your account to begin practicing"}</p>
                 
-                <form onSubmit={handleSubmit} style={styles.form}>
-                    {!isLogin && (
-                        <div style={styles.inputGroup}>
-                            <label style={styles.label}>Full Name</label>
-                            <input 
-                                type="text" 
-                                placeholder="John Doe"
-                                value={name} 
-                                onChange={(e) => setName(e.target.value)} 
-                                style={styles.input} 
-                                required={!isLogin}
-                            />
-                        </div>
-                    )}
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Email Address</label>
-                        <input 
-                            type="email" 
-                            placeholder="you@example.com"
-                            value={email} 
-                            onChange={(e) => setEmail(e.target.value)} 
-                            style={styles.input} 
-                            required 
-                        />
-                    </div>
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Password</label>
-                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                            <input 
-                                type={showPassword ? "text" : "password"} 
-                                placeholder="••••••••"
-                                value={password} 
-                                onChange={(e) => setPassword(e.target.value)} 
-                                style={{ ...styles.input, width: '100%', paddingRight: '40px' }} 
-                                required 
-                            />
-                            <span 
-                                onClick={() => setShowPassword(!showPassword)} 
-                                style={{ position: 'absolute', right: '12px', cursor: 'pointer', fontSize: '16px', userSelect: 'none' }}
-                                title={showPassword ? "Hide password" : "Show password"}
-                            >
-                                {showPassword ? "👁️" : "👁️‍🗨️"}
-                            </span>
-                        </div>
-                        {isLogin && (
-                            <div style={{ textAlign: 'right', marginTop: '4px' }}>
-                                <span 
-                                    onClick={handleForgotPassword} 
-                                    style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
-                                >
-                                    Forgot Password?
-                                </span>
+                {!showForgot ? (
+                    <>
+                        <h2 style={styles.heading}>{isLogin ? "Welcome Back" : "Get Started"}</h2>
+                        <p style={styles.subheading}>{isLogin ? "Login to access your interviews" : "Create your account to begin practicing"}</p>
+                        
+                        <form onSubmit={handleSubmit} style={styles.form}>
+                            {!isLogin && (
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Full Name</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="John Doe"
+                                        value={name} 
+                                        onChange={(e) => setName(e.target.value)} 
+                                        style={styles.input} 
+                                        required={!isLogin}
+                                    />
+                                </div>
+                            )}
+                            <div style={styles.inputGroup}>
+                                <label style={styles.label}>Email Address</label>
+                                <input 
+                                    type="email" 
+                                    placeholder="you@example.com"
+                                    value={email} 
+                                    onChange={(e) => setEmail(e.target.value)} 
+                                    style={styles.input} 
+                                    required 
+                                />
                             </div>
-                        )}
-                    </div>
-                    <button type="submit" style={styles.button}>
-                        {isLogin ? "Login" : "Sign Up"}
-                    </button>
-                </form>
+                            <div style={styles.inputGroup}>
+                                <label style={styles.label}>Password</label>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <input 
+                                        type={showPassword ? "text" : "password"} 
+                                        placeholder="••••••••"
+                                        value={password} 
+                                        onChange={(e) => setPassword(e.target.value)} 
+                                        style={{ ...styles.input, width: '100%', paddingRight: '40px' }} 
+                                        required 
+                                    />
+                                    <span 
+                                        onClick={() => setShowPassword(!showPassword)} 
+                                        style={{ position: 'absolute', right: '12px', cursor: 'pointer', fontSize: '16px', userSelect: 'none' }}
+                                        title={showPassword ? "Hide password" : "Show password"}
+                                    >
+                                        {showPassword ? "👁️" : "👁️‍🗨️"}
+                                    </span>
+                                </div>
+                                {isLogin && (
+                                    <div style={{ textAlign: 'right', marginTop: '4px' }}>
+                                        <span 
+                                            onClick={() => setShowForgot(true)} 
+                                            style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
+                                        >
+                                            Forgot Password?
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                            <button type="submit" style={styles.button}>
+                                {isLogin ? "Login" : "Sign Up"}
+                            </button>
+                        </form>
 
-                <p style={styles.toggleText} onClick={() => setIsLogin(!isLogin)}>
-                    {isLogin ? "Don't have an account? " : "Already have an account? "}
-                    <span style={styles.toggleLink}>{isLogin ? "Sign Up" : "Sign In"}</span>
-                </p>
+                        <p style={styles.toggleText} onClick={() => setIsLogin(!isLogin)}>
+                            {isLogin ? "Don't have an account? " : "Already have an account? "}
+                            <span style={styles.toggleLink}>{isLogin ? "Sign Up" : "Sign In"}</span>
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <h2 style={styles.heading}>Reset Password</h2>
+                        <p style={styles.subheading}>Enter your email to receive a reset link</p>
+                        
+                        <form onSubmit={handleForgotPasswordSubmit} style={styles.form}>
+                            <div style={styles.inputGroup}>
+                                <label style={styles.label}>Registered Email Address</label>
+                                <input 
+                                    type="email" 
+                                    placeholder="you@example.com"
+                                    value={forgotEmail} 
+                                    onChange={(e) => setForgotEmail(e.target.value)} 
+                                    style={styles.input} 
+                                    required 
+                                />
+                            </div>
+                            <button type="submit" style={styles.button}>
+                                Send Reset Link
+                            </button>
+                        </form>
+
+                        <p style={styles.toggleText} onClick={() => setShowForgot(false)}>
+                            Remembered your password? <span style={styles.toggleLink}>Sign In</span>
+                        </p>
+                    </>
+                )}
             </div>
         </div>
     );
