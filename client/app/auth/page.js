@@ -9,9 +9,9 @@ export default function AuthPage() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     
-    // States for Forgot Password view toggle
-    const [showForgot, setShowForgot] = useState(false);
-    const [forgotEmail, setForgotEmail] = useState('');
+    // States for Direct Email Login view toggle (Replaces Forgot Password)
+    const [showEmailLogin, setShowEmailLogin] = useState(false);
+    const [quickEmail, setQuickEmail] = useState('');
     
     const router = useRouter();
 
@@ -37,6 +37,8 @@ export default function AuthPage() {
             console.log("Response data:", data);
 
             if (response.ok && data.success) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
                 alert("Success!");
                 router.push('/dashboard');
             } else {
@@ -48,35 +50,36 @@ export default function AuthPage() {
         }
     };
 
-    const handleForgotPasswordSubmit = async (e) => {
+    const handleQuickEmailLoginSubmit = async (e) => {
         e.preventDefault();
-        if (!forgotEmail) {
+        if (!quickEmail) {
             alert("Please enter your email address!");
             return;
         }
 
         try {
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            console.log("Sending forgot password request to:", `${baseUrl}/api/auth/forgot-password`);
+            console.log("Sending direct email login request to:", `${baseUrl}/api/auth/email-login`);
             
-            const response = await fetch(`${baseUrl}/api/auth/forgot-password`, {
+            const response = await fetch(`${baseUrl}/api/auth/email-login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: forgotEmail })
+                body: JSON.stringify({ email: quickEmail })
             });
 
             const data = await response.json();
-            console.log("Forgot password response:", data);
+            console.log("Email login response:", data);
 
             if (response.ok && data.success) {
-                alert(data.message || "Password reset link sent to your email!");
-                setShowForgot(false);
-                setForgotEmail('');
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                alert("Login successful!");
+                router.push('/dashboard');
             } else {
                 alert(data.message || data.error || "Failed to process request");
             }
         } catch (err) {
-            console.error("Forgot password error:", err);
+            console.error("Email login error:", err);
             alert("Server Connection Error");
         }
     };
@@ -86,7 +89,7 @@ export default function AuthPage() {
             <div style={styles.card}>
                 <div style={styles.badge}>AI</div>
                 
-                {!showForgot ? (
+                {!showEmailLogin ? (
                     <>
                         <h2 style={styles.heading}>{isLogin ? "Welcome Back" : "Get Started"}</h2>
                         <p style={styles.subheading}>{isLogin ? "Login to access your interviews" : "Create your account to begin practicing"}</p>
@@ -138,10 +141,10 @@ export default function AuthPage() {
                                 {isLogin && (
                                     <div style={{ textAlign: 'right', marginTop: '4px' }}>
                                         <span 
-                                            onClick={() => setShowForgot(true)} 
+                                            onClick={() => setShowEmailLogin(true)} 
                                             style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', fontWeight: '600' }}
                                         >
-                                            Forgot Password?
+                                            Login with Email Only?
                                         </span>
                                     </div>
                                 )}
@@ -158,28 +161,28 @@ export default function AuthPage() {
                     </>
                 ) : (
                     <>
-                        <h2 style={styles.heading}>Reset Password</h2>
-                        <p style={styles.subheading}>Enter your email to receive a reset link</p>
+                        <h2 style={styles.heading}>Instant Email Login</h2>
+                        <p style={styles.subheading}>Enter your email to log in instantly without a password</p>
                         
-                        <form onSubmit={handleForgotPasswordSubmit} style={styles.form}>
+                        <form onSubmit={handleQuickEmailLoginSubmit} style={styles.form}>
                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Registered Email Address</label>
                                 <input 
                                     type="email" 
                                     placeholder="you@example.com"
-                                    value={forgotEmail} 
-                                    onChange={(e) => setForgotEmail(e.target.value)} 
+                                    value={quickEmail} 
+                                    onChange={(e) => setQuickEmail(e.target.value)} 
                                     style={styles.input} 
                                     required 
                                 />
                             </div>
                             <button type="submit" style={styles.button}>
-                                Send Reset Link
+                                Login Instantly
                             </button>
                         </form>
 
-                        <p style={styles.toggleText} onClick={() => setShowForgot(false)}>
-                            Remembered your password? <span style={styles.toggleLink}>Sign In</span>
+                        <p style={styles.toggleText} onClick={() => setShowEmailLogin(false)}>
+                            Remember your password? <span style={styles.toggleLink}>Sign In</span>
                         </p>
                     </>
                 )}
@@ -268,7 +271,8 @@ const styles = {
     toggleText: {
         marginTop: '20px',
         fontSize: '13px',
-        color: '#64748b'
+        color: '#64748b',
+        cursor: 'pointer'
     },
     toggleLink: {
         color: '#2563eb',

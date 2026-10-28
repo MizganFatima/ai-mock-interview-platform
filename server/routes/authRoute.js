@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ai_mock_interview_super_secret_key';
 
@@ -33,7 +32,7 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-// Login Route
+// Login Route (With Password)
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -61,35 +60,29 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Forgot Password Route (Returning reset link directly - No SMTP timeout)
-router.post('/forgot-password', async (req, res) => {
+// Direct Email Login Route (Passwordless / Replaces Forgot Password)
+router.post('/email-login', async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ email });
         
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found with this email" });
+            return res.status(404).json({ success: false, message: "Email not found. Please sign up first." });
         }
 
-        // Generate a secure reset token
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
-        await user.save();
+        // Generate token directly for instant login
+        const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
 
-        // Use environment CLIENT_URL or fallback to live Vercel frontend URL
-        const clientUrl = process.env.CLIENT_URL || 'https://ai-mock-interview-platform-tau.vercel.app';
-        const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
-
-        console.log("🔑 Generated Password Reset Link:", resetUrl);
+        console.log("⚡ Direct Email Login successful for:", email);
 
         res.status(200).json({ 
             success: true, 
-            message: "Password reset link generated successfully!",
-            resetUrl: resetUrl 
+            message: "Login successful!", 
+            token,
+            user: { id: user._id, name: user.name, email: user.email } 
         });
     } catch (err) {
-        console.error("FORGOT PASSWORD ERROR DETAILS:", err);
+        console.error("EMAIL LOGIN ERROR DETAILS:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
