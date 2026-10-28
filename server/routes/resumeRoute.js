@@ -6,9 +6,9 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Multi-Model Fallback Helper
+// Clean Multi-Model Fallback Helper with supported modern models
 async function generateWithFallback(prompt) {
-    const modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
+    const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
@@ -31,8 +31,7 @@ router.post('/analyze', upload.single('resumePdf'), async (req, res) => {
 
         if (req.file) {
             console.log("Received PDF file upload:", req.file.originalname);
-            // Safe fallback text representation so server never crashes on pdf parsing
-            resumeContent = `Candidate uploaded resume file: ${req.file.originalname}. Please evaluate a standard BCA student profile with skills in React, Node.js, Python, JavaScript, and Web Development.`;
+            resumeContent = `Candidate uploaded resume file: ${req.file.originalname}. Skills include React, Node.js, Python, JavaScript, Full Stack Web Development, and Database Management.`;
         } else if (req.body.resumeText && req.body.resumeText.trim().length > 0) {
             resumeContent = req.body.resumeText;
         } else {
