@@ -7,6 +7,26 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Safe PDF Parser Wrapper to prevent "pdfParse is not a function" error
+async function parsePdfSafely(buffer) {
+    try {
+        if (typeof pdfParse === 'function') {
+            const data = await pdfParse(buffer);
+            return data.text;
+        } else if (pdfParse && typeof pdfParse.default === 'function') {
+            const data = await pdfParse.default(buffer);
+            return data.text;
+        } else {
+            const parser = pdfParse.default || pdfParse;
+            const data = await parser(buffer);
+            return data.text;
+        }
+    } catch (err) {
+        console.error("PDF Parsing Inner Error:", err.message);
+        throw new Error("Could not extract text from PDF. Please paste resume text directly.");
+    }
+}
+
 // Multi-Model Fallback Helper
 async function generateWithFallback(prompt) {
     const modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
@@ -30,11 +50,10 @@ router.post('/analyze', upload.single('resumePdf'), async (req, res) => {
     try {
         let resumeContent = '';
 
-        // 1. If PDF File is uploaded, parse actual text
+        // 1. If PDF File is uploaded, parse actual text using safe wrapper
         if (req.file) {
             console.log("Extracting text from PDF file:", req.file.originalname);
-            const pdfData = await pdfParse(req.file.buffer);
-            resumeContent = pdfData.text;
+            resumeContent = await parsePdfSafely(req.file.buffer);
         } 
         // 2. If Direct Text is pasted
         else if (req.body.resumeText && req.body.resumeText.trim().length > 0) {
