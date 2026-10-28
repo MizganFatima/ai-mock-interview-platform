@@ -16,7 +16,7 @@ router.post('/signup', async (req, res) => {
             return res.status(400).json({ success: false, message: "User already exists with this email" });
         }
 
-        // Hash the password before saving
+        // Hash password before saving
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -37,7 +37,7 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-// Login Route (Comparing Hashed Password)
+// Login Route (Supports both old plain text passwords and new hashed passwords)
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -47,8 +47,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ success: false, message: "User not found with this email" });
         }
 
-        // Compare password using bcrypt
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Check plain text match (for old users) OR bcrypt match (for new users)
+        let isMatch = false;
+        if (user.password === password) {
+            isMatch = true;
+        } else {
+            isMatch = await bcrypt.compare(password, user.password);
+        }
+
         if (!isMatch) {
             return res.status(400).json({ success: false, message: "Incorrect password" });
         }
@@ -67,7 +73,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Direct Email Login Route (Passwordless)
+// Direct Email Login Route (Passwordless / Instant Login)
 router.post('/email-login', async (req, res) => {
     try {
         const { email } = req.body;
@@ -78,6 +84,8 @@ router.post('/email-login', async (req, res) => {
         }
 
         const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+
+        console.log("⚡ Direct Email Login successful for:", email);
 
         res.status(200).json({ 
             success: true, 
