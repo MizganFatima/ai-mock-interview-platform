@@ -26,7 +26,10 @@ export default function ResumeAnalyzerPage() {
                 formData.append('resumeText', resumeText);
             }
 
-            const response = await fetch('http://localhost:5000/api/resume/analyze', {
+            // Updated to use Live Render Backend URL instead of localhost
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-mock-interview-platform-ix0t.onrender.com';
+
+            const response = await fetch(`${backendUrl}/api/resume/analyze`, {
                 method: 'POST',
                 body: formData,
             });
@@ -55,7 +58,7 @@ export default function ResumeAnalyzerPage() {
         <div style={{ maxWidth: '850px', margin: '40px auto', padding: '24px', fontFamily: 'sans-serif', background: '#ffffff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
             
             {/* Top Navigation Bar with Back to Dashboard Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', pb: '16px', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
                 <button 
                     type="button"
                     onClick={() => router.push('/dashboard')}
