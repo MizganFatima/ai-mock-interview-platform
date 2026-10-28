@@ -13,7 +13,15 @@ const reportRoutes = require('./routes/reportRoute');
 const verifyTokenAndRole = require('./middleware/roleMiddleware');
 
 const app = express();
-app.use(cors());
+
+// ==================== Robust CORS Configuration ====================
+app.use(cors({
+    origin: '*', // Allow all origins for seamless Vercel frontend communication
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true
+}));
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
