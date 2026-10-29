@@ -62,19 +62,23 @@ router.post('/analyze', upload.single('resumePdf'), async (req, res) => {
         const prompt = `You are an expert technical recruiter and resume reviewer. 
 Analyze the following resume details specifically for the target role: "${targetRole}".
 
-Provide a comprehensive analysis including:
-1. Overall ATS Compatibility Score (out of 100) based strictly on genuine evaluation of the provided content.
-2. Key Strengths.
-3. Missing Skills / Weaknesses for ${targetRole}.
-4. Actionable Improvements & Recommendations.
+Evaluate the content strictly and generate a genuine ATS score based ONLY on the provided resume content.
+
+Format the feedback as clear, numbered points covering key sections:
+1. Contact Information & Online Presence
+2. Professional Summary Overview
+3. Technical Skills Categorization
+4. Work Experience & Achievements
+5. Projects & Live Links
+6. Education & Certifications
 
 Resume Content:
 ${resumeContent}
 
 Return ONLY a strict JSON object (no extra markdown outside JSON) with this exact schema:
 {
-    "score": 75,
-    "feedback": "Detailed constructive feedback with key highlights, strengths, and area of improvements."
+    "score": 10,
+    "feedback": "This submission lacks essential components required for a ${targetRole} resume...\\n\\n1. Contact Information: Include your full name...\\n2. Professional Summary: Write a 2-3 sentence overview...\\n3. Technical Skills: Group your skills into categories...\\n4. Work Experience: List past roles in reverse-chronological order...\\n5. Projects: Include substantial personal/open-source projects...\\n6. Education & Certifications: Detail your degree and institution..."
 }`;
 
         let rawText = await generateWithDynamicFallback(prompt);
@@ -100,7 +104,7 @@ Return ONLY a strict JSON object (no extra markdown outside JSON) with this exac
         });
     } catch (err) {
         console.error("Resume Analysis Error:", err.message);
-        // Fallback only triggered if AI completely fails to respond
+        // Safe fallback only if AI service is completely down
         res.json({
             success: true,
             analysis: {
