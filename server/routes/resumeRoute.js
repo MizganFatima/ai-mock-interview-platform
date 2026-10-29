@@ -39,10 +39,27 @@ Return ONLY a strict JSON object (no extra markdown outside JSON) with this exac
     "feedback": "Detailed constructive feedback with key highlights, strengths, and area of improvements."
 }`;
 
-        // Using strictly the supported v1beta flash model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(prompt);
-        let rawText = result.response.text();
+        // Explicitly fallback through working flash models to avoid any 404 pro model errors
+        let rawText = '';
+        const modelsToTry = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-flash"];
+        
+        let successFlag = false;
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`Attempting analysis with model: ${modelName}`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                rawText = result.response.text();
+                successFlag = true;
+                break;
+            } catch (modelErr) {
+                console.log(`Model ${modelName} skipped:`, modelErr.message);
+            }
+        }
+
+        if (!successFlag) {
+            throw new Error("All Gemini flash model endpoints failed to respond.");
+        }
         
         let cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         
