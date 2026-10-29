@@ -3,8 +3,41 @@ const router = express.Router();
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const apiKey = process.env.GEMINI_API_KEY || '';
+const genAI = new GoogleGenerativeAI(apiKey);
 const upload = multer({ storage: multer.memoryStorage() });
+
+async function generateWithDynamicFallback(prompt) {
+    let modelsToTry = ["gemini-3.8-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-flash"];
+    
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await response.json();
+        if (data && data.models) {
+            const dynamicFlashModels = data.models
+                .filter(m => m.name.includes('flash') && m.supportedGenerationMethods?.includes('generateContent'))
+                .map(m => m.name.replace('models/', ''));
+            if (dynamicFlashModels.length > 0) {
+                modelsToTry = [...new Set([...dynamicFlashModels, ...modelsToTry])];
+            }
+        }
+    } catch (e) {
+        console.log("⚠️ Resume dynamic model fetch skipped, using default list.");
+    }
+
+    let lastError = null;
+    for (const modelName of modelsToTry) {
+        try {
+            console.log(`[Resume Analyzer] Trying model: ${modelName}`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw lastError;
+}
 
 router.post('/analyze', upload.single('resumePdf'), async (req, res) => {
     try {
@@ -39,28 +72,7 @@ Return ONLY a strict JSON object (no extra markdown outside JSON) with this exac
     "feedback": "Detailed constructive feedback with key highlights, strengths, and area of improvements."
 }`;
 
-        // Explicitly fallback through working flash models to avoid any 404 pro model errors
-        let rawText = '';
-        const modelsToTry = ["gemini-1.5-flash", "gemini-2.5-flash", "gemini-flash"];
-        
-        let successFlag = false;
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`Attempting analysis with model: ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
-                rawText = result.response.text();
-                successFlag = true;
-                break;
-            } catch (modelErr) {
-                console.log(`Model ${modelName} skipped:`, modelErr.message);
-            }
-        }
-
-        if (!successFlag) {
-            throw new Error("All Gemini flash model endpoints failed to respond.");
-        }
-        
+        let rawText = await generateWithDynamicFallback(prompt);
         let cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         
         let analysisData;
