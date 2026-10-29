@@ -16,7 +16,7 @@ const app = express();
 
 // ==================== Robust CORS Configuration ====================
 app.use(cors({
-    origin: '*', 
+    origin: '*', // Allow all origins for seamless Vercel frontend communication
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true
@@ -26,6 +26,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
+// ==================== Secure Environment Variables ====================
 const MONGO_URI = process.env.MONGO_URI;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
@@ -40,35 +41,39 @@ if (!GEMINI_API_KEY) {
 // Initialize Google Gemini AI securely
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
+// Connect to MongoDB Database safely
 if (MONGO_URI) {
     mongoose.connect(MONGO_URI, { family: 4 })
       .then(() => console.log('MongoDB Connected Successfully'))
       .catch(err => console.log('DB Connection Error:', err.message));
 }
 
-// ==================== Dynamic & Fallback Gemini AI Helper ====================
+// ==================== Multi-Model Fallback Gemini AI Helper ====================
 async function callGeminiAI(prompt) {
-    let modelsToTry = ["gemini-3.8-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-pro"];
+    let modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
     
-    // Automatically fetch currently active models from Google API dynamically
+    // Attempt dynamic fetch from Google v1beta Models endpoint to auto-discover active flash models
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
-        const data = await response.json();
-        if (data && data.models) {
-            const dynamicFlashModels = data.models
-                .filter(m => m.name.includes('flash') && m.supportedGenerationMethods?.includes('generateContent'))
-                .map(m => m.name.replace('models/', ''));
-            
-            if (dynamicFlashModels.length > 0) {
-                // Prioritize dynamically found working models
-                modelsToTry = [...new Set([...dynamicFlashModels, ...modelsToTry])];
+        if (global.fetch) {
+            const response = await global.fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+            const data = await response.json();
+            if (data && data.models && Array.isArray(data.models)) {
+                const dynamicModels = data.models
+                    .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''))
+                    .filter(name => name.includes('flash'));
+                
+                if (dynamicModels.length > 0) {
+                    modelsToTry = [...new Set([...dynamicModels, ...modelsToTry])];
+                }
             }
         }
     } catch (e) {
-        console.log("⚠️ Dynamic model fetch skipped, using standard fallback list.");
+        console.log("⚠️ Dynamic model fetch skipped, falling back to static list.");
     }
 
     let lastError = null;
+
     for (const modelName of modelsToTry) {
         try {
             console.log(`Trying Gemini model: ${modelName}...`);
@@ -80,6 +85,7 @@ async function callGeminiAI(prompt) {
             lastError = err;
         }
     }
+    console.log("Gemini API Error across all fallback models:", lastError?.message);
     throw lastError;
 }
 
@@ -242,10 +248,18 @@ Return JSON object: {"score": 8, "critique": "Professional feedback"}`;
 });
 
 // ==================== Register Modular Routes ====================
-app.use('/api/auth', authRoutes);    
+app.use('/api/auth', authRoutes);    // Authentication Routes (Direct Signup/Login)
 app.use('/api/arena', arenaRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/report', reportRoutes); 
 
+// Protected Admin Route
 app.get('/api/admin/dashboard', verifyTokenAndRole(['admin']), (req, res) => {
-    res.json({ success: true, message:
+    res.json({ success: true, message: "Welcome to Admin Dashboard - Authorized" });
+});
+
+app.get('/', (req, res) => {
+    res.send('AI Mock Interview Platform Backend is Live & Running! 🚀');
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

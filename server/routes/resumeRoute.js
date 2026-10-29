@@ -8,34 +8,41 @@ const genAI = new GoogleGenerativeAI(apiKey);
 const upload = multer({ storage: multer.memoryStorage() });
 
 async function generateWithDynamicFallback(prompt) {
-    let modelsToTry = ["gemini-3.8-flash", "gemini-1.5-flash", "gemini-2.5-flash", "gemini-flash"];
+    let modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
     
+    // Attempt dynamic fetch from Google v1beta Models endpoint to auto-discover active flash models
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        const data = await response.json();
-        if (data && data.models) {
-            const dynamicFlashModels = data.models
-                .filter(m => m.name.includes('flash') && m.supportedGenerationMethods?.includes('generateContent'))
-                .map(m => m.name.replace('models/', ''));
-            if (dynamicFlashModels.length > 0) {
-                modelsToTry = [...new Set([...dynamicFlashModels, ...modelsToTry])];
+        if (global.fetch) {
+            const response = await global.fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+            const data = await response.json();
+            if (data && data.models && Array.isArray(data.models)) {
+                const dynamicModels = data.models
+                    .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''))
+                    .filter(name => name.includes('flash'));
+                
+                if (dynamicModels.length > 0) {
+                    modelsToTry = [...new Set([...dynamicModels, ...modelsToTry])];
+                }
             }
         }
     } catch (e) {
-        console.log("⚠️ Resume dynamic model fetch skipped, using default list.");
+        console.log("⚠️ Resume dynamic model fetch skipped, falling back to static list.");
     }
 
     let lastError = null;
     for (const modelName of modelsToTry) {
         try {
-            console.log(`[Resume Analyzer] Trying model: ${modelName}`);
+            console.log(`[Resume Analyzer] Trying model: ${modelName}...`);
             const model = genAI.getGenerativeModel({ model: modelName });
             const result = await model.generateContent(prompt);
             return result.response.text();
         } catch (err) {
+            console.log(`⚠️ Model ${modelName} failed in resumeRoute:`, err.message);
             lastError = err;
         }
     }
+    console.log("Gemini API Error across all fallback models in resumeRoute:", lastError?.message);
     throw lastError;
 }
 
