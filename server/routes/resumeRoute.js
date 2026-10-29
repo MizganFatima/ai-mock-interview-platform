@@ -6,25 +6,6 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Modern models list to replace deprecated ones
-async function generateWithFallback(prompt) {
-    const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-    let lastError = null;
-
-    for (const modelName of modelsToTry) {
-        try {
-            console.log(`[Resume Analyzer] Trying model: ${modelName}...`);
-            const model = genAI.getGenerativeModel({ model: modelName });
-            const result = await model.generateContent(prompt);
-            return result.response.text();
-        } catch (err) {
-            console.log(`⚠️ Model ${modelName} failed:`, err.message);
-            lastError = err;
-        }
-    }
-    throw lastError;
-}
-
 router.post('/analyze', upload.single('resumePdf'), async (req, res) => {
     try {
         let resumeContent = '';
@@ -58,7 +39,11 @@ Return ONLY a strict JSON object (no extra markdown outside JSON) with this exac
     "feedback": "Detailed constructive feedback with key highlights, strengths, and area of improvements."
 }`;
 
-        let rawText = await generateWithFallback(prompt);
+        // Using strictly the supported v1beta flash model
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        let rawText = result.response.text();
+        
         let cleanedText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         
         let analysisData;
