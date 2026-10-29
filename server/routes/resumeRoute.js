@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Clean Multi-Model Fallback Helper with supported modern models
+// Modern models list to replace deprecated ones
 async function generateWithFallback(prompt) {
     const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastError = null;

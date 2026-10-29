@@ -41,14 +41,17 @@ if (!GEMINI_API_KEY) {
 // Initialize Google Gemini AI securely
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Connect to MongoDB Database
-mongoose.connect(MONGO_URI, { family: 4 })
-  .then(() => console.log('MongoDB Connected Successfully'))
-  .catch(err => console.log('DB Connection Error:', err.message));
+// Connect to MongoDB Database safely
+if (MONGO_URI) {
+    mongoose.connect(MONGO_URI, { family: 4 })
+      .then(() => console.log('MongoDB Connected Successfully'))
+      .catch(err => console.log('DB Connection Error:', err.message));
+}
 
 // ==================== Multi-Model Fallback Gemini AI Helper ====================
 async function callGeminiAI(prompt) {
-    const modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
+    // Modern v1beta supported Gemini models only
+    const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
