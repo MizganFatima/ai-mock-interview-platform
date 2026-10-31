@@ -262,14 +262,14 @@ export default function RecruiterPage() {
                 )}
             </div>
 
-            {/* AI Resume Optimizer Section */}
+            {/* AI Resume Optimizer Section - Route updated to /resume-analyzer */}
             <div style={{ background: '#ffffff', padding: '25px 30px', borderRadius: '16px', marginBottom: '25px', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>AI Resume & Profile Optimizer</h3>
                 <p style={{ color: '#475569', marginBottom: '18px', lineHeight: '1.5', fontSize: '14px', fontWeight: '500' }}>
                     Access your dedicated AI resume analysis workspace to scan keywords, format check, and get detailed ATS scoring.
                 </p>
                 <button 
-                    onClick={() => router.push('/resume')} 
+                    onClick={() => router.push('/resume-analyzer')} 
                     style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
                 >
                     Open Resume Analyzer
