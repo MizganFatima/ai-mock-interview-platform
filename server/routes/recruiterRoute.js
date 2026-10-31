@@ -33,6 +33,38 @@ const companyProfiles = {
     }
 };
 
+// Robust Fallback Question Pools for Backend
+const fallbackQuestionPools = {
+    Google: [
+        "How would you design a scalable microservices architecture for Google?",
+        "Explain how you would handle low-latency distributed caching at global scale.",
+        "Design a rate limiter system to handle millions of requests per second.",
+        "How does Google Search indexing manage petabytes of dynamic web data efficiently?",
+        "Discuss consistency models in distributed databases like Google Spanner."
+    ],
+    Amazon: [
+        "Describe a situation where you had to scale a database under heavy traffic spikes.",
+        "How do you ensure high availability and fault tolerance in e-commerce checkout microservices?",
+        "Explain your approach to implementing secure CI/CD deployment pipelines.",
+        "How would you design an inventory management system handling concurrent updates?",
+        "Discuss how Amazon's recommendation engine processes user data streams in real time."
+    ],
+    Microsoft: [
+        "How would you design an enterprise-grade role-based access control (RBAC) system?",
+        "Discuss strategies for migrating a monolithic legacy application to enterprise cloud microservices.",
+        "How do you manage cross-service authentication using OAuth2 and JWT tokens?",
+        "Design an enterprise document management system with strict version control and auditing.",
+        "How would you implement multi-tenancy isolation in cloud-native SaaS applications?"
+    ],
+    "TCS / Infosys": [
+        "What are the core principles of Object-Oriented Programming and how do you apply them?",
+        "Explain the difference between SQL and NoSQL databases with real-world use cases.",
+        "How do you optimize slow-performing database queries and indexing?",
+        "Explain the MVC (Model-View-Controller) architectural pattern in web development.",
+        "What is RESTful API design and what are the best practices for status codes?"
+    ]
+};
+
 // Select Company and Initialize Simulation
 router.post('/simulate', (req, res) => {
     try {
@@ -75,7 +107,11 @@ router.post('/question', async (req, res) => {
         res.json({ question });
     } catch (err) {
         console.log("Recruiter Question Error:", err.message);
-        res.json({ question: `How would you handle architectural bottlenecks and performance optimization in your projects for ${req.body.company || 'Enterprise'}?` });
+        // Fallback to random question from backend pool
+        const companyKey = req.body.company && fallbackQuestionPools[req.body.company] ? req.body.company : "Google";
+        const pool = fallbackQuestionPools[companyKey];
+        const randomQ = pool[Math.floor(Math.random() * pool.length)];
+        res.json({ question: randomQ });
     }
 });
 

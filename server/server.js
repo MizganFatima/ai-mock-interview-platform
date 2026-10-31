@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoute');
 const arenaRoutes = require('./routes/arenaRoute');
 const resumeRoutes = require('./routes/resumeRoute');
 const reportRoutes = require('./routes/reportRoute'); 
+const recruiterRoutes = require('./routes/recruiterRoute'); // Fixed capital 'R' matching your filename
 const verifyTokenAndRole = require('./middleware/roleMiddleware');
 
 const app = express();
@@ -209,49 +210,12 @@ app.post('/api/readiness/evaluate', async (req, res) => {
     }
 });
 
-// ==================== AI Recruiter Simulator API ====================
-app.post('/api/recruiter/question', async (req, res) => {
-    try {
-        const { company, role } = req.body;
-        const targetCompany = company || 'Google';
-        const targetRole = role || 'Full Stack Developer';
-
-        const prompt = `You are a senior interviewer at ${targetCompany} interviewing a ${targetRole}. Generate a single technical question matching ${targetCompany}'s standard interview process. Return only plain text question.`;
-        const question = await callGeminiAI(prompt);
-        res.json({ question: question.trim() });
-    } catch (err) {
-        res.json({ question: `How would you handle architectural bottlenecks and performance optimization in your projects for ${req.body.company || 'Enterprise'}?` });
-    }
-});
-
-app.post('/api/recruiter/evaluate', async (req, res) => {
-    try {
-        const { company, question, answer } = req.body;
-        const targetCompany = company || 'Google';
-
-        const prompt = `You are a hiring manager at ${targetCompany}. Evaluate candidate's answer strictly.
-Question: ${question}
-Answer: ${answer}
-
-Return JSON object: {"score": 8, "critique": "Professional feedback"}`;
-
-        const rawContent = await callGeminiAI(prompt);
-        let cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-        const result = JSON.parse(cleanedContent || '{"score": 8, "critique": "Strong response meeting core competencies."}');
-        res.json(result);
-    } catch (err) {
-        res.json({
-            score: 8,
-            critique: "Your answer effectively addresses architectural requirements. To excel further, elaborate on concurrency and system resilience."
-        });
-    }
-});
-
 // ==================== Register Modular Routes ====================
-app.use('/api/auth', authRoutes);    // Authentication Routes (Direct Signup/Login)
+app.use('/api/auth', authRoutes);    // Authentication Routes
 app.use('/api/arena', arenaRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/report', reportRoutes); 
+app.use('/api/recruiter', recruiterRoutes); // Recruiter Simulator Route Mounted Safely
 
 // Protected Admin Route
 app.get('/api/admin/dashboard', verifyTokenAndRole(['admin']), (req, res) => {

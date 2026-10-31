@@ -19,6 +19,98 @@ export default function RecruiterPage() {
         { name: 'TCS / Infosys', focus: 'Core CS Fundamentals & Aptitude', style: 'Standard & Foundational' }
     ];
 
+    // 20+ Questions Pool for each company to prevent repetition
+    const questionPools = {
+        Google: [
+            "How would you design a scalable microservices architecture for Google?",
+            "Explain how you would handle low-latency distributed caching at global scale.",
+            "Design a rate limiter system to handle millions of requests per second.",
+            "How does Google Search indexing manage petabytes of dynamic web data efficiently?",
+            "Discuss consistency models in distributed databases like Google Spanner.",
+            "Design a distributed message queue system handling high throughput.",
+            "How would you implement real-time collaborative document editing like Google Docs?",
+            "Explain your strategy for securing inter-service communication using mTLS at scale.",
+            "Design a URL shortening service handling high traffic volumes with low latency.",
+            "How do you optimize garbage collection pauses in large-scale backend services?",
+            "Explain the CAP theorem and how Google's distributed systems balance consistency and availability.",
+            "Design an automated anomaly detection system for server log monitoring.",
+            "How would you architect a video streaming platform with global CDN caching?",
+            "Discuss strategies for zero-downtime database migrations in distributed clusters.",
+            "Design a distributed file storage system handling petabytes of unstructured data.",
+            "How do you handle cascading failures and circuit breaking in complex microservices?",
+            "Design a scalable notification dispatch system for millions of push notifications.",
+            "Explain load balancing algorithms used at Layer 4 and Layer 7 in cloud environments.",
+            "How would you implement distributed locking across multiple cloud data centers?",
+            "Discuss memory management and optimization techniques in high-performance backend code."
+        ],
+        Amazon: [
+            "Describe a situation where you had to scale a database under heavy traffic spikes.",
+            "How do you ensure high availability and fault tolerance in e-commerce checkout microservices?",
+            "Explain your approach to implementing secure CI/CD deployment pipelines.",
+            "How would you design a inventory management system handling concurrent updates?",
+            "Discuss how Amazon's recommendation engine processes user data streams in real time.",
+            "Design a fraud detection service analyzing real-time financial transactions.",
+            "How do you handle idempotency in distributed payment processing architectures?",
+            "Explain strategy for multi-region active-active database replication.",
+            "Design a scalable customer support ticketing and routing platform.",
+            "How do you manage configuration drift across thousands of cloud instances?",
+            "Discuss decoupling strategies using event-driven messaging with Apache Kafka.",
+            "Design a distributed session store for high-traffic web applications.",
+            "How do you monitor and trace performance bottlenecks across microservices?",
+            "Explain blue-green deployment strategies and automated rollback mechanisms.",
+            "Design a high-throughput logging and auditing aggregation pipeline.",
+            "How do you secure API endpoints against unauthorized access and SQL injection?",
+            "Discuss strategies for optimizing cloud infrastructure costs without losing performance.",
+            "Design an automated backup and disaster recovery validation workflow.",
+            "How do you implement rate limiting and throttling per tenant in SaaS platforms?",
+            "Explain container orchestration strategies using Kubernetes and auto-scaling pods."
+        ],
+        Microsoft: [
+            "How would you design an enterprise-grade role-based access control (RBAC) system?",
+            "Discuss strategies for migrating a monolithic legacy application to enterprise cloud microservices.",
+            "How do you manage cross-service authentication using OAuth2 and JWT tokens?",
+            "Design an enterprise document management system with strict version control and auditing.",
+            "How would you implement multi-tenancy isolation in cloud-native SaaS applications?",
+            "Discuss enterprise security policies and compliance frameworks in Azure/AWS.",
+            "Design a real-time telemetry collection and dashboard visualization tool.",
+            "How do you optimize Entity Framework or database ORM queries under high loads?",
+            "Explain enterprise messaging patterns using Azure Service Bus or RabbitMQ.",
+            "Design a scalable employee directory and organizational chart microservice.",
+            "How do you handle distributed transactions across independent microservice databases?",
+            "Discuss API versioning strategies and backward compatibility maintenance.",
+            "Design a secure file upload and virus scanning pipeline for enterprise web apps.",
+            "How do you implement centralized configuration management and feature flags?",
+            "Explain disaster recovery planning and recovery time objectives (RTO) for enterprise systems.",
+            "Design an automated code quality inspection tool integrated into GitHub Actions.",
+            "How do you manage database indexing and query execution plans for optimal speed?",
+            "Discuss strategies for reducing cold-start latency in serverless function architectures.",
+            "Design a secure password reset and multi-factor authentication workflow.",
+            "How do you test resilient microservices using chaos engineering methodologies?"
+        ],
+        "TCS / Infosys": [
+            "What are the core principles of Object-Oriented Programming and how do you apply them?",
+            "Explain the difference between SQL and NoSQL databases with real-world use cases.",
+            "How do you optimize slow-performing database queries and indexing?",
+            "Explain the MVC (Model-View-Controller) architectural pattern in web development.",
+            "What is RESTful API design and what are the best practices for status codes?",
+            "Explain memory leak concepts in programming and how to detect and fix them.",
+            "How do you handle exception handling and robust logging in backend applications?",
+            "Explain the difference between process and thread in operating systems.",
+            "What are database normalization forms up to 3NF with examples?",
+            "How do you secure web applications against Cross-Site Scripting (XSS) and CSRF?",
+            "Explain Git branching strategies and how merge conflicts are resolved in teams.",
+            "What is dependency injection and why is it useful in software design?",
+            "Explain the difference between synchronous and asynchronous programming models.",
+            "How do you write unit tests and mock dependencies using testing frameworks?",
+            "What are web sockets and how do they differ from HTTP polling?",
+            "Explain CORS (Cross-Origin Resource Sharing) and how to configure it securely.",
+            "What is connection pooling in database management and why is it important?",
+            "Explain pagination and sorting techniques in large database result sets.",
+            "What are environment variables and why are they critical for secure configuration?",
+            "Explain the software development life cycle (SDLC) and Agile Scrum methodologies."
+        ]
+    };
+
     const [jobs, setJobs] = useState([
         { title: 'Junior Software Developer', company: 'TechNova Solutions', location: 'Remote / Hybrid', type: 'Full-time' },
         { title: 'Python & AI Intern', company: 'DataMinds Corp', location: 'Remote', type: 'Internship' },
@@ -43,7 +135,10 @@ export default function RecruiterPage() {
             const data = await res.json();
             setQuestion(data.question || `Explain a complex architectural challenge you solved while working as a ${role} at ${selectedCompany}.`);
         } catch (err) {
-            setQuestion(`How would you design a scalable microservices architecture for ${selectedCompany}?`);
+            // Fallback to random question from the pool so questions change dynamically
+            const pool = questionPools[selectedCompany] || questionPools["Google"];
+            const randomQ = pool[Math.floor(Math.random() * pool.length)];
+            setQuestion(randomQ);
         } finally {
             setLoading(false);
         }
