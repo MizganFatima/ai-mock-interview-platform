@@ -11,6 +11,7 @@ export default function RecruiterPage() {
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [askedQuestions, setAskedQuestions] = useState([]);
 
     const companies = [
         { name: 'Google', focus: 'System Design & Algorithm Depth', style: 'Rigorous & Analytical' },
@@ -47,7 +48,7 @@ export default function RecruiterPage() {
             "Describe a situation where you had to scale a database under heavy traffic spikes.",
             "How do you ensure high availability and fault tolerance in e-commerce checkout microservices?",
             "Explain your approach to implementing secure CI/CD deployment pipelines.",
-            "How would you design a inventory management system handling concurrent updates?",
+            "How would you design an inventory management system handling concurrent updates?",
             "Discuss how Amazon's recommendation engine processes user data streams in real time.",
             "Design a fraud detection service analyzing real-time financial transactions.",
             "How do you handle idempotency in distributed payment processing architectures?",
@@ -117,31 +118,26 @@ export default function RecruiterPage() {
         { title: 'Frontend Web Developer', company: 'WebCrafters Studio', location: 'Remote', type: 'Contract' }
     ]);
 
-    const [resumeTip, setResumeTip] = useState('Click below to generate AI-powered resume optimization suggestions.');
-
-    const generateResumeTip = () => {
-        setResumeTip('Tip: Highlight your hands-on experience with Python, React, and REST APIs. Quantify your project achievements with metrics (e.g., "Deployed 4+ scalable web apps on Render").');
-    };
-
     const startSimulator = async () => {
         setLoading(true);
         setInterviewStarted(true);
-        try {
-            const res = await fetch('http://localhost:5000/api/recruiter/question', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ company: selectedCompany, role })
-            });
-            const data = await res.json();
-            setQuestion(data.question || `Explain a complex architectural challenge you solved while working as a ${role} at ${selectedCompany}.`);
-        } catch (err) {
-            // Fallback to random question from the pool so questions change dynamically
-            const pool = questionPools[selectedCompany] || questionPools["Google"];
-            const randomQ = pool[Math.floor(Math.random() * pool.length)];
-            setQuestion(randomQ);
-        } finally {
-            setLoading(false);
+        setFeedback(null);
+        setAnswer('');
+
+        const pool = questionPools[selectedCompany] || questionPools["Google"];
+        const availableQuestions = pool.filter(q => !askedQuestions.includes(q));
+        
+        let selectedQ = "";
+        if (availableQuestions.length === 0) {
+            setAskedQuestions([]);
+            selectedQ = pool[Math.floor(Math.random() * pool.length)];
+        } else {
+            selectedQ = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
         }
+
+        setAskedQuestions(prev => [...prev, selectedQ]);
+        setQuestion(selectedQ);
+        setLoading(false);
     };
 
     const submitAnswer = async () => {
@@ -216,7 +212,7 @@ export default function RecruiterPage() {
                             <button onClick={() => setInterviewStarted(false)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Change Company</button>
                         </div>
 
-                        {loading && <p style={{ color: '#64748b', fontSize: '14px' }}>AI Recruiter is tailoring questions based on {selectedCompany} standards...</p>}
+                        {loading && <p style={{ color: '#64748b', fontSize: '14px' }}>Loading question...</p>}
 
                         {question && !loading && (
                             <div style={{ marginBottom: '15px' }}>
@@ -234,12 +230,20 @@ export default function RecruiterPage() {
                                     onChange={(e) => setAnswer(e.target.value)}
                                     style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', marginBottom: '12px', outline: 'none' }}
                                 />
-                                <button 
-                                    onClick={submitAnswer}
-                                    style={{ background: '#059669', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
-                                >
-                                    Submit Answer for Review
-                                </button>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button 
+                                        onClick={submitAnswer}
+                                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                                    >
+                                        Submit Answer for Review
+                                    </button>
+                                    <button 
+                                        onClick={startSimulator}
+                                        style={{ background: '#64748b', color: '#fff', border: 'none', padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                                    >
+                                        Skip / Next Question
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div style={{ background: '#f0fdf4', padding: '18px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
@@ -247,7 +251,7 @@ export default function RecruiterPage() {
                                 <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#047857' }}>Score: {feedback.score}/10</p>
                                 <p style={{ margin: 0, fontSize: '13px', color: '#065f46', lineHeight: '1.5' }}>{feedback.critique}</p>
                                 <button 
-                                    onClick={() => { setFeedback(null); setAnswer(''); startSimulator(); }}
+                                    onClick={startSimulator}
                                     style={{ marginTop: '12px', background: '#2563eb', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
                                 >
                                     Next Question
@@ -261,12 +265,14 @@ export default function RecruiterPage() {
             {/* AI Resume Optimizer Section */}
             <div style={{ background: '#ffffff', padding: '25px 30px', borderRadius: '16px', marginBottom: '25px', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>AI Resume & Profile Optimizer</h3>
-                <p style={{ color: '#475569', marginBottom: '18px', lineHeight: '1.5', fontSize: '14px', fontWeight: '500' }}>{resumeTip}</p>
+                <p style={{ color: '#475569', marginBottom: '18px', lineHeight: '1.5', fontSize: '14px', fontWeight: '500' }}>
+                    Access your dedicated AI resume analysis workspace to scan keywords, format check, and get detailed ATS scoring.
+                </p>
                 <button 
-                    onClick={generateResumeTip} 
+                    onClick={() => router.push('/resume')} 
                     style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
                 >
-                    Get AI Resume Feedback
+                    Open Resume Analyzer
                 </button>
             </div>
 
