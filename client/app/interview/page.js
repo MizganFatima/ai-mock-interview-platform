@@ -6,8 +6,11 @@ export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
     const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
+    const [course, setCourse] = useState('');
+    const [branch, setBranch] = useState('');
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
+    const [customUserQuestion, setCustomUserQuestion] = useState(''); // <-- Custom Question Input State
     const [loading, setLoading] = useState(false);
     const [question, setQuestion] = useState('As a Software Developer, explain closures, lexical scoping, and practical use cases of asynchronous JavaScript using async/await.');
     const [answer, setAnswer] = useState('');
@@ -262,16 +265,17 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    const getLocalRoleOrTopicQuestion = (targetRole, targetTopic, targetDifficulty) => {
+    const getLocalRoleOrTopicQuestion = (targetRole, targetCourse, targetBranch, targetTopic, targetDifficulty) => {
+        let activeDomain = targetCourse.trim() ? `${targetCourse.trim()} ${targetBranch.trim()}` : targetRole;
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
-        if (targetTopic && targetTopic.trim().length > 0) {
-            const customT = targetTopic.trim();
+        if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
+            const customT = targetTopic.trim() || targetBranch.trim() || activeDomain;
             pool = [
-                `Explain the fundamental architecture and core design principles of ${customT} in ${targetRole} at a ${targetDifficulty.toLowerCase()} level.`,
+                `Explain the fundamental architecture and core design principles of ${customT} in ${activeDomain} at a ${targetDifficulty.toLowerCase()} level.`,
                 `How do you handle performance tuning and practical execution when working with ${customT}?`,
                 `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`,
-                `Compare ${customT} with alternative tools. When is it the preferred choice for ${targetRole}?`,
+                `Compare ${customT} with alternative domains. When is it the preferred choice for ${activeDomain}?`,
                 `Walk through a complex scenario or bug you encountered related to ${customT} and how you resolved it.`,
                 `How do you structure analysis, logging, and implementation strategy in ${customT}?`,
                 `Explain how advanced principles or core workflows are managed in ${customT}.`,
@@ -306,11 +310,27 @@ export default function InterviewPage() {
 
     const handleGenerateQuestion = async (e) => {
         if (e) e.preventDefault();
+        
+        // Agar user ne khud ka custom question input box mein type kiya hai, toh seedha wahi set kar do!
+        if (customUserQuestion && customUserQuestion.trim().length > 0) {
+            setQuestion(customUserQuestion.trim());
+            setAskedQuestions(prev => [...prev, customUserQuestion.trim()]);
+            setCustomUserQuestion('');
+            setTimeLeft(60);
+            setIsTimerRunning(true);
+            setEvaluation(null);
+            setAnswer('');
+            return;
+        }
+
         setLoading(true);
         setEvaluation(null);
         setAnswer('');
         setTimeLeft(60);
         setIsTimerRunning(false);
+
+        const effectiveRole = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
+        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
 
         try {
             const token = localStorage.getItem('token');
@@ -321,8 +341,8 @@ export default function InterviewPage() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    role, 
-                    topic, 
+                    role: effectiveRole, 
+                    topic: effectiveTopic, 
                     difficulty, 
                     language: selectedLanguage,
                     excludeQuestions: askedQuestions 
@@ -342,7 +362,7 @@ export default function InterviewPage() {
             }
             throw new Error('API Key Failed or Network Issue');
         } catch (err) {
-            const fallbackQ = getLocalRoleOrTopicQuestion(role, topic, difficulty);
+            const fallbackQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
             setQuestion(fallbackQ);
             setIsTimerRunning(true);
         } finally {
@@ -357,6 +377,8 @@ export default function InterviewPage() {
         }
         setIsTimerRunning(false);
         setEvaluating(true);
+        const activeDomain = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
+        const activeTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
 
         try {
             const token = localStorage.getItem('token');
@@ -367,8 +389,8 @@ export default function InterviewPage() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    topic, 
-                    role,
+                    topic: activeTopic || activeDomain, 
+                    role: activeDomain,
                     question, 
                     answer, 
                     currentDifficulty: difficulty,
@@ -392,9 +414,9 @@ export default function InterviewPage() {
         } catch (err) {
             setEvaluation({
                 score: 90,
-                feedback: `Your technical response for ${role} - ${topic} demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
+                feedback: `Your technical response for ${activeDomain} demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
                 nextDifficulty: difficulty,
-                nextQuestion: getLocalRoleOrTopicQuestion(role, topic, difficulty)
+                nextQuestion: getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty)
             });
         } finally {
             setEvaluating(false);
@@ -411,7 +433,7 @@ export default function InterviewPage() {
                         Adaptive AI Interview Engine
                     </h1>
                     <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
-                        Curated Technical Questions & Instant Fast Practice Workspace
+                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
                     </p>
                 </div>
                 <button 
@@ -469,7 +491,11 @@ export default function InterviewPage() {
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
-                            onChange={(e) => setRole(e.target.value)}
+                            onChange={(e) => {
+                                setRole(e.target.value);
+                                setCourse('');
+                                setBranch('');
+                            }}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="Software Developer">Software Developer</option>
@@ -483,12 +509,12 @@ export default function InterviewPage() {
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill (Optional)</label>
                         <input 
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. JavaScript, Python, SQL"
+                            placeholder="e.g. JavaScript, React, SQL"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
@@ -507,12 +533,60 @@ export default function InterviewPage() {
                     </div>
 
                     <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Language</label>
+                        <select 
+                            value={selectedLanguage} 
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                        >
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                        </select>
+                    </div>
+
+                    {/* Custom Course / Stream */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>Custom Course / Stream:</label>
+                        <input 
+                            type="text" 
+                            value={course}
+                            onChange={(e) => setCourse(e.target.value)}
+                            placeholder="e.g., Engineering, BSc, BCA"
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        />
+                    </div>
+
+                    {/* Custom Branch / Specialization */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>Custom Branch / Specialization:</label>
+                        <input 
+                            type="text" 
+                            value={branch}
+                            onChange={(e) => setBranch(e.target.value)}
+                            placeholder="e.g., Computer Science, AI, IT"
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                        />
+                    </div>
+
+                    {/* Custom User-Entered Question Input (Added back successfully) */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#059669', marginBottom: '4px' }}>✍️ Enter Your Own Custom Question (Optional):</label>
+                        <input 
+                            type="text" 
+                            value={customUserQuestion}
+                            onChange={(e) => setCustomUserQuestion(e.target.value)}
+                            placeholder="Type any custom question you want to practice directly..."
+                            style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '2px solid #059669', fontSize: '12px', boxSizing: 'border-box', background: '#f0fdf4' }}
+                        />
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
                         <button 
                             type="submit" 
                             disabled={loading}
-                            style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '9px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                            style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
                         >
-                            {loading ? 'Generating...' : '✨ Generate New Question'}
+                            {loading ? 'Generating...' : '✨ Generate New Unique Question'}
                         </button>
                     </div>
                 </form>
@@ -522,17 +596,17 @@ export default function InterviewPage() {
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
-                        Target: {role} ({difficulty})
+                        Course/Role: {course.trim() ? `${course} ${branch}` : role} | Topic: {topic} | Level: {difficulty}
                     </span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
                             onClick={speakQuestion}
                             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
                         >
-                            🔊 Read Question
+                            🔊 Listen Question
                         </button>
                         <span style={{ fontSize: '13px', fontWeight: '800', color: timeLeft <= 15 ? '#dc2626' : '#0f172a' }}>
-                            ⏳ {timeLeft}s remaining
+                            ⏳ Time Left: {timeLeft}s
                         </span>
                     </div>
                 </div>
@@ -544,13 +618,13 @@ export default function InterviewPage() {
                 {!evaluation ? (
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Your Answer:</label>
+                            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Your Technical Answer:</label>
                             <button 
                                 type="button"
                                 onClick={startListening}
                                 style={{ background: isListening ? '#fee2e2' : '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', color: isListening ? '#dc2626' : '#334155' }}
                             >
-                                {isListening ? '🎙️ Listening... (Speak now)' : '🎤 Use Voice Answer'}
+                                {isListening ? '🎙️ Listening... (Speak now)' : '🎤 Voice Input'}
                             </button>
                         </div>
 
