@@ -6,8 +6,8 @@ export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
     const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
-    const [course, setCourse] = useState('biotec');
-    const [branch, setBranch] = useState('bsc');
+    const [course, setCourse] = useState('');
+    const [branch, setBranch] = useState('');
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Questions Bank per Role with Instant Fallback
+    // 20 Comprehensive Questions Bank per Role with Instant Local Fallback
     const roleQuestionBanks = {
         "Software Developer": [
             "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
@@ -394,6 +394,24 @@ export default function InterviewPage() {
     return (
         <div style={{ padding: '24px 20px', backgroundColor: '#ffffff', color: '#0f172a', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', boxSizing: 'border-box', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
             
+            {/* Header with Back to Dashboard Button[cite: 8, 9, 10] */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                    <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 4px 0', color: '#0f172a' }}>
+                        Adaptive AI Interview Engine
+                    </h1>
+                    <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
+                    </p>
+                </div>
+                <button 
+                    onClick={() => router.push('/dashboard')}
+                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
+
             {/* Proctoring Bar */}
             <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -433,12 +451,12 @@ export default function InterviewPage() {
                 </div>
             )}
 
-            {/* Configuration Form (Exact Screenshot Layout) */}
+            {/* Configuration Form (Matching Exact Placeholders from Screenshots)[cite: 8, 9, 10] */}
             <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
                 <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
                     
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role (20 Curated Questions)</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
                             onChange={(e) => setRole(e.target.value)}
@@ -490,7 +508,7 @@ export default function InterviewPage() {
                         </select>
                     </div>
 
-                    {/* Custom Fields Row */}
+                    {/* Custom Fields with Exact Placeholders[cite: 8, 9, 10] */}
                     <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>🎓 Custom Course / Stream:</label>
@@ -498,7 +516,7 @@ export default function InterviewPage() {
                                 type="text" 
                                 value={course}
                                 onChange={(e) => setCourse(e.target.value)}
-                                placeholder="e.g., biotec"
+                                placeholder="e.g., Engineering, BSc, BBA"
                                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                             />
                         </div>
@@ -509,7 +527,7 @@ export default function InterviewPage() {
                                 type="text" 
                                 value={branch}
                                 onChange={(e) => setBranch(e.target.value)}
-                                placeholder="e.g., bsc"
+                                placeholder="e.g., Civil, Biotech, Finance"
                                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                             />
                         </div>
