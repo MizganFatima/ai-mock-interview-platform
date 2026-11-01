@@ -11,6 +11,8 @@ export default function InterviewPage() {
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [loading, setLoading] = useState(false);
+    
+    const [questionIndex, setQuestionIndex] = useState(0);
     const [question, setQuestion] = useState('What is the difference between process and thread in operating systems?');
     const [answer, setAnswer] = useState('');
     const [timeLeft, setTimeLeft] = useState(60);
@@ -18,21 +20,6 @@ export default function InterviewPage() {
     const [isListening, setIsListening] = useState(false);
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
-    
-    // Robust local storage persistence to prevent repetition on mobile devices
-    const [askedQuestions, setAskedQuestions] = useState(() => {
-        if (typeof window !== 'undefined') {
-            const saved = localStorage.getItem('interview_asked_questions');
-            return saved ? JSON.parse(saved) : [];
-        }
-        return [];
-    });
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('interview_asked_questions', JSON.stringify(askedQuestions));
-        }
-    }, [askedQuestions]);
 
     const [cameraActive, setCameraActive] = useState(false);
     const [cameraError, setCameraError] = useState('');
@@ -273,7 +260,7 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    const getLocalRoleOrTopicQuestion = (targetRole, targetCourse, targetBranch, targetTopic, targetDifficulty) => {
+    const getNextSequentialQuestion = (targetRole, targetCourse, targetBranch, targetTopic) => {
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
         if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
@@ -286,18 +273,9 @@ export default function InterviewPage() {
             ];
         }
 
-        const unasked = pool.filter(q => !askedQuestions.includes(q));
-        let selected;
-        if (unasked.length > 0) {
-            selected = unasked[Math.floor(Math.random() * unasked.length)];
-        } else {
-            // Agar saare questions khatam ho jayein tab list reset karo
-            setAskedQuestions([]);
-            selected = pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        setAskedQuestions(prev => [...prev, selected]);
-        return selected;
+        const nextIdx = (questionIndex + 1) % pool.length;
+        setQuestionIndex(nextIdx);
+        return pool[nextIdx];
     };
 
     const handleGenerateQuestion = async (e) => {
@@ -309,7 +287,7 @@ export default function InterviewPage() {
         setIsTimerRunning(false);
 
         setTimeout(() => {
-            const nextQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
+            const nextQ = getNextSequentialQuestion(role, course, branch, topic);
             setQuestion(nextQ);
             setIsTimerRunning(true);
             setLoading(false);
@@ -326,11 +304,12 @@ export default function InterviewPage() {
         const activeDomain = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
 
         setTimeout(() => {
+            const nextQ = getNextSequentialQuestion(role, course, branch, topic);
             setEvaluation({
                 score: 88,
                 feedback: `Your technical response for ${activeDomain} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
                 nextDifficulty: difficulty,
-                nextQuestion: getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty)
+                nextQuestion: nextQ
             });
             setEvaluating(false);
         }, 500);
