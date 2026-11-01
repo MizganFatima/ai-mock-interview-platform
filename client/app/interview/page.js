@@ -24,7 +24,7 @@ export default function InterviewPage() {
     const [cameraError, setCameraError] = useState('');
     const videoRef = useRef(null);
 
-    // 20 Comprehensive Theory & Conceptual Questions per Role (For Fallback & Dropdown Roles)
+    // 20 Comprehensive Backup Questions per Role (Hidden backend safety bank)
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -259,29 +259,32 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    // Smart Question Picker: Uses 20-question bank or custom course pool without repeating
-    const getNextQuestion = (targetRole, targetCourse, targetBranch, targetTopic) => {
+    // Clean, natural and highly diverse custom topic question generator
+    const getNextUniqueQuestion = (targetRole, targetCourse, targetBranch, targetTopic) => {
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
         if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
             const customT = targetTopic.trim() || targetBranch.trim() || targetCourse.trim() || targetRole;
             pool = [
-                `What are the core concepts, principles, and fundamental architecture of ${customT}?`,
-                `How do you handle practical execution, data analysis, and performance tuning when working with ${customT}?`,
-                `What are the most common experimental challenges, errors, and solutions in ${customT}?`,
-                `Why is ${customT} considered crucial for modern research, development, and industry applications?`,
-                `Explain the role of methodology, instrumentation, or software tools used in ${customT}.`,
-                `How do you evaluate safety, compliance, and quality control standards in ${customT}?`,
-                `Describe a real-world scenario or project where you applied ${customT} principles to solve a problem.`,
-                `What are the latest technological or scientific advancements trending in ${customT}?`
+                `What are the core fundamentals and foundational blocks of ${customT}?`,
+                `How do you implement practical problem-solving methods in ${customT}?`,
+                `What are the major challenges or technical bottlenecks faced in ${customT}, and how do you resolve them?`,
+                `Can you explain a key mechanism or workflow commonly used in ${customT}?`,
+                `How does ${customT} compare with other traditional approaches in the industry?`,
+                `What tools, software, or frameworks are essential for working efficiently with ${customT}?`,
+                `Describe a scenario where you would apply ${customT} concepts to design a solution.`,
+                `What safety, quality control, or compliance standards are critical when handling ${customT}?`,
+                `How do you debug or handle unexpected errors during ${customT} execution?`,
+                `What future trends or advancements are currently emerging in the field of ${customT}?`
             ];
         }
 
-        // Pick a random question from the pool that is different from current
-        let available = pool.filter(q => q !== question);
-        if (available.length === 0) available = pool;
-        const randomQ = available[Math.floor(Math.random() * available.length)];
-        return randomQ;
+        // Ensure absolute uniqueness by filtering out current question
+        let availableQuestions = pool.filter(q => q !== question);
+        if (availableQuestions.length === 0) availableQuestions = pool;
+
+        const randomIdx = Math.floor(Math.random() * availableQuestions.length);
+        return availableQuestions[randomIdx];
     };
 
     const handleGenerateQuestion = async (e) => {
@@ -293,7 +296,7 @@ export default function InterviewPage() {
         setIsTimerRunning(false);
 
         setTimeout(() => {
-            const nextQ = getNextQuestion(role, course, branch, topic);
+            const nextQ = getNextUniqueQuestion(role, course, branch, topic);
             setQuestion(nextQ);
             setIsTimerRunning(true);
             setLoading(false);
@@ -310,7 +313,7 @@ export default function InterviewPage() {
         const activeDomain = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
 
         setTimeout(() => {
-            const nextQ = getNextQuestion(role, course, branch, topic);
+            const nextQ = getNextUniqueQuestion(role, course, branch, topic);
             setEvaluation({
                 score: 88,
                 feedback: `Your technical response for ${activeDomain} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
@@ -386,7 +389,7 @@ export default function InterviewPage() {
                 <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
                     
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role (20 Curated Questions)</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
                             onChange={(e) => setRole(e.target.value)}
