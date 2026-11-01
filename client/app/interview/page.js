@@ -19,7 +19,20 @@ export default function InterviewPage() {
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
     
-    const [askedQuestions, setAskedQuestions] = useState([]);
+    // Persistent asked questions storage for mobile and desktop to prevent repetition
+    const [askedQuestions, setAskedQuestions] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = sessionStorage.getItem('askedQuestions');
+            return saved ? JSON.parse(saved) : [];
+        }
+        return [];
+    });
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('askedQuestions', JSON.stringify(askedQuestions));
+        }
+    }, [askedQuestions]);
 
     const [cameraActive, setCameraActive] = useState(false);
     const [cameraError, setCameraError] = useState('');
@@ -294,7 +307,6 @@ export default function InterviewPage() {
         setTimeLeft(60);
         setIsTimerRunning(false);
 
-        // Directly pick from robust theory question bank to avoid any lengthy code puzzles
         setTimeout(() => {
             const nextQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
             setQuestion(nextQ);
