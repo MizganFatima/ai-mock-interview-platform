@@ -6,8 +6,6 @@ export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
     const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
-    const [course, setCourse] = useState('');
-    const [branch, setBranch] = useState('');
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [loading, setLoading] = useState(false);
@@ -29,7 +27,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Comprehensive 20 Questions Bank for Each Pre-defined Role (Safe Instant Fallback)
+    // Comprehensive 20 Questions Bank for Each Role (Instant Local Fallback)
     const roleQuestionBanks = {
         "Software Developer": [
             "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
@@ -264,17 +262,16 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    const getLocalRoleOrTopicQuestion = (targetRole, targetCourse, targetBranch, targetTopic, targetDifficulty) => {
-        let activeDomain = targetCourse.trim() ? `${targetCourse.trim()} ${targetBranch.trim()}` : targetRole;
+    const getLocalRoleOrTopicQuestion = (targetRole, targetTopic, targetDifficulty) => {
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
-        if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
-            const customT = targetTopic.trim() || targetBranch.trim() || activeDomain;
+        if (targetTopic && targetTopic.trim().length > 0) {
+            const customT = targetTopic.trim();
             pool = [
-                `Explain the fundamental architecture and core design principles of ${customT} in ${activeDomain} at a ${targetDifficulty.toLowerCase()} level.`,
+                `Explain the fundamental architecture and core design principles of ${customT} in ${targetRole} at a ${targetDifficulty.toLowerCase()} level.`,
                 `How do you handle performance tuning and practical execution when working with ${customT}?`,
                 `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`,
-                `Compare ${customT} with alternative domains. When is it the preferred choice for ${activeDomain}?`,
+                `Compare ${customT} with alternative tools. When is it the preferred choice for ${targetRole}?`,
                 `Walk through a complex scenario or bug you encountered related to ${customT} and how you resolved it.`,
                 `How do you structure analysis, logging, and implementation strategy in ${customT}?`,
                 `Explain how advanced principles or core workflows are managed in ${customT}.`,
@@ -315,20 +312,17 @@ export default function InterviewPage() {
         setTimeLeft(60);
         setIsTimerRunning(false);
 
-        const effectiveRole = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
-        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
-
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/api/interview/generate`, {
+            const response = await fetch(`${API_BASE}/api/interview/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    role: effectiveRole, 
-                    topic: effectiveTopic, 
+                    role, 
+                    topic, 
                     difficulty, 
                     language: selectedLanguage,
                     excludeQuestions: askedQuestions 
@@ -337,7 +331,7 @@ export default function InterviewPage() {
 
             if (response.ok) {
                 const data = await response.json();
-                const fetchedQ = data.question || (data.questions && data.questions[0]);
+                const fetchedQ = data.question;
                 if (fetchedQ && !askedQuestions.includes(fetchedQ)) {
                     setQuestion(fetchedQ);
                     setAskedQuestions(prev => [...prev, fetchedQ]);
@@ -348,7 +342,7 @@ export default function InterviewPage() {
             }
             throw new Error('API Key Failed or Network Issue');
         } catch (err) {
-            const fallbackQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
+            const fallbackQ = getLocalRoleOrTopicQuestion(role, topic, difficulty);
             setQuestion(fallbackQ);
             setIsTimerRunning(true);
         } finally {
@@ -363,8 +357,7 @@ export default function InterviewPage() {
         }
         setIsTimerRunning(false);
         setEvaluating(true);
-        const activeDomain = course.trim() ? `${course.trim()} ${branch.trim()}` : role;
-        const activeTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
@@ -373,13 +366,24 @@ export default function InterviewPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ topic: activeTopic || activeDomain, question, answer, currentDifficulty: difficulty })
+                body: JSON.stringify({ 
+                    topic, 
+                    role,
+                    question, 
+                    answer, 
+                    currentDifficulty: difficulty,
+                    language: selectedLanguage,
+                    excludeQuestions: askedQuestions 
+                })
             });
 
             if (response.ok) {
                 const data = await response.json();
                 if (data.evaluation) {
                     setEvaluation(data.evaluation);
+                    if (data.evaluation.nextQuestion) {
+                        setAskedQuestions(prev => [...prev, data.evaluation.nextQuestion]);
+                    }
                     setEvaluating(false);
                     return;
                 }
@@ -388,8 +392,9 @@ export default function InterviewPage() {
         } catch (err) {
             setEvaluation({
                 score: 90,
-                feedback: `Your technical response for ${activeDomain} - ${activeTopic} demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
-                nextDifficulty: difficulty
+                feedback: `Your technical response for ${role} - ${topic} demonstrates strong analytical depth and clean professional structuring. Excellent explanation!`,
+                nextDifficulty: difficulty,
+                nextQuestion: getLocalRoleOrTopicQuestion(role, topic, difficulty)
             });
         } finally {
             setEvaluating(false);
@@ -406,23 +411,15 @@ export default function InterviewPage() {
                         Adaptive AI Interview Engine
                     </h1>
                     <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
-                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
+                        Curated Technical Questions & Instant Fast Practice Workspace
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
-                        onClick={() => router.push('/resume-analyzer')}
-                        style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
-                    >
-                        📄 Resume Analyzer
-                    </button>
-                    <button 
-                        onClick={() => router.push('/dashboard')}
-                        style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
-                    >
-                        ← Back to Dashboard
-                    </button>
-                </div>
+                <button 
+                    onClick={() => router.push('/dashboard')}
+                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
+                >
+                    ← Back to Dashboard
+                </button>
             </div>
 
             {/* Proctoring Bar */}
@@ -472,11 +469,7 @@ export default function InterviewPage() {
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
-                            onChange={(e) => {
-                                setRole(e.target.value);
-                                setCourse('');
-                                setBranch('');
-                            }}
+                            onChange={(e) => setRole(e.target.value)}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="Software Developer">Software Developer</option>
@@ -529,9 +522,9 @@ export default function InterviewPage() {
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
-                        Target: {course.trim() ? `${course} ${branch}` : role} ({difficulty})
+                        Target: {role} ({difficulty})
                     </span>
-                    <div style={{ display: 'flex', alignItems: 'gap: 12px', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
                             onClick={speakQuestion}
                             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
@@ -593,8 +586,13 @@ export default function InterviewPage() {
                         <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#065f46', lineHeight: '1.5' }}>{evaluation.feedback}</p>
                         <button 
                             onClick={() => {
+                                if (evaluation.nextQuestion) {
+                                    setQuestion(evaluation.nextQuestion);
+                                }
                                 setEvaluation(null);
-                                handleGenerateQuestion();
+                                setAnswer('');
+                                setTimeLeft(60);
+                                setIsTimerRunning(true);
                             }}
                             style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
                         >
