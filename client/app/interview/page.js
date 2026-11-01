@@ -11,7 +11,7 @@ export default function InterviewPage() {
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
     const [loading, setLoading] = useState(false);
-    const [question, setQuestion] = useState('Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.');
+    const [question, setQuestion] = useState('What is the difference between process and thread in operating systems?');
     const [answer, setAnswer] = useState('');
     const [timeLeft, setTimeLeft] = useState(60);
     const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -27,161 +27,161 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Questions Bank per Role with Instant Local Fallback
+    // 20 Comprehensive & Short Natural Interview Questions per Role for Instant Fallback
     const roleQuestionBanks = {
         "Software Developer": [
-            "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
-            "What is the difference between process and thread? How does multi-threading affect application performance?",
-            "Explain how memory leaks occur in software applications and how you diagnose and fix them.",
-            "Describe the Software Development Life Cycle (SDLC) models and when you would choose Agile over Waterfall.",
-            "How do you handle dependency injection and loose coupling in your backend architecture?",
-            "Explain RESTful API design principles and statelessness in distributed systems.",
-            "What are design patterns? Give an example of where you implemented the Singleton or Factory pattern.",
-            "How do you write robust unit tests and handle mocking in test-driven development (TDD)?",
-            "Explain how database indexing works and how it speeds up query execution times.",
-            "Describe a complex architectural trade-off you had to make between code readability and execution speed.",
-            "What is the difference between compiler and interpreter? How does JIT compilation work?",
-            "Explain SOLID principles with real-world software engineering examples.",
-            "How do garbage collectors manage heap memory in high-concurrency environments?",
-            "What is the difference between monolithic architecture and microservices?",
-            "Explain how recursion works and how tail-call optimization prevents stack overflow.",
-            "How do you optimize time and space complexity using Big-O notation analysis?",
-            "What are WebAssembly and native extensions, and when should you use them?",
-            "Explain semantic versioning and git branching strategies for large engineering teams.",
-            "How do you handle API deprecation and backward compatibility in public services?",
-            "Describe how you structure clean architecture and domain-driven design (DDD) in enterprise codebases."
+            "What is the difference between process and thread in operating systems?",
+            "Explain Object-Oriented Programming principles with a real-world example.",
+            "How do you handle memory leaks in software applications?",
+            "What is the difference between Agile and Waterfall development models?",
+            "Explain RESTful API design principles and statelessness.",
+            "What are design patterns and where would you use the Singleton pattern?",
+            "How does database indexing improve query performance?",
+            "What is the difference between a compiler and an interpreter?",
+            "Explain SOLID principles in software engineering.",
+            "How do garbage collectors manage heap memory?",
+            "What is dependency injection and why is it useful?",
+            "Explain the concept of recursion and tail-call optimization.",
+            "What are the main differences between SQL and NoSQL databases?",
+            "How do you ensure security and authentication in web applications?",
+            "What is version control and how do you handle merge conflicts in Git?",
+            "Explain microservices architecture versus monolithic architecture.",
+            "How do you write unit tests and practice test-driven development?",
+            "What is Big-O notation and how do you analyze algorithm complexity?",
+            "How do you handle error logging and debugging in production?",
+            "Explain the software development life cycle (SDLC) phases."
         ],
         "Frontend Engineer": [
-            "Explain the Virtual DOM in React and how reconciliation works under the hood.",
-            "What are React Hooks? Explain the lifecycle equivalent of useEffect and useCallback optimization.",
-            "How do you optimize Core Web Vitals (LCP, FID, CLS) for high-traffic web applications?",
-            "Explain CSS specificity, Flexbox layout mechanics, and Grid systems.",
-            "What is state management? Compare Redux Toolkit, Context API, and Zustand.",
-            "How does browser rendering pipeline work (Reflow vs Repaint)?",
-            "Explain client-side routing versus server-side rendering (SSR) and Incremental Static Regeneration (ISR) in Next.js.",
-            "How do you secure web applications against Cross-Site Scripting (XSS) and CSRF attacks?",
-            "Explain progressive web apps (PWAs) and service worker caching strategies.",
-            "How do you write accessible (a11y) web components adhering to WCAG guidelines?",
-            "Explain event bubbling, event capturing, and event delegation in JavaScript.",
-            "What is the difference between shadow DOM and light DOM in Web Components?",
-            "How do image optimization, lazy loading, and code splitting reduce initial bundle size?",
-            "Explain CSS-in-JS vs Tailwind CSS vs CSS Modules in modern web development.",
-            "How do browser cookies, localStorage, and sessionStorage differ in security and scope?",
-            "What are Web Vitals and how do you monitor real user metrics (RUM)?",
-            "Explain micro-frontends architecture and module federation in Webpack/Vite.",
-            "How do you handle CORS errors and configure preflight requests on the client?",
-            "Explain asynchronous script loading using async and defer tags.",
-            "How do you debug memory leaks caused by uncleared event listeners or subscriptions in Single Page Apps?"
+            "What is the Virtual DOM in React and how does reconciliation work?",
+            "Explain the difference between useEffect and useLayoutEffect.",
+            "How do you optimize Core Web Vitals for performance?",
+            "Explain CSS specificity and how it affects styling rules.",
+            "Compare Redux Toolkit, Context API, and Zustand for state management.",
+            "How does the browser rendering pipeline handle reflow and repaint?",
+            "What is the difference between Server-Side Rendering (SSR) and Client-Side Rendering (CSR)?",
+            "How do you secure web applications against XSS and CSRF attacks?",
+            "Explain event bubbling, capturing, and delegation in JavaScript.",
+            "How do you optimize image loading and code splitting in modern web apps?",
+            "What are React custom hooks and when should you create them?",
+            "Explain CSS Flexbox and Grid layout mechanics.",
+            "How do you handle form validation and state handling in React?",
+            "What is progressive web app (PWA) offline caching?",
+            "How do you ensure accessibility (a11y) standards in web design?",
+            "What are JavaScript closures and lexical scoping?",
+            "How do you debug memory leaks in Single Page Applications?",
+            "Explain CORS and how to handle cross-origin requests.",
+            "What is the difference between localStorage, sessionStorage, and cookies?",
+            "How do you handle asynchronous JavaScript using async/await and promises?"
         ],
         "Backend Developer": [
-            "Explain the Event Loop in Node.js and how asynchronous I/O non-blocking operations are handled.",
-            "What are microservices architecture and what are the main challenges in distributed transactions?",
-            "Explain database normalization (1NF, 2NF, 3NF) and when you should denormalize for performance.",
-            "How do you implement JWT authentication and secure password hashing using bcrypt?",
-            "What is caching? Compare Redis and Memcached implementation strategies for high throughput.",
-            "Explain ACID properties in relational databases and how eventual consistency works in NoSQL.",
-            "How do you handle rate limiting, API throttling, and DDoS protection on backend servers?",
-            "What is message queuing? Compare RabbitMQ and Apache Kafka use cases.",
-            "How do you monitor backend server health, logging, and APM (Application Performance Monitoring)?",
-            "Describe how you would design a scalable URL shortener or chat system backend.",
-            "What is gRPC and how does Protocol Buffers compare to JSON REST APIs?",
-            "Explain database connection pooling and how to prevent thread exhaustion under load.",
-            "How do database transactions, optimistic locking, and pessimistic locking work?",
-            "Explain GraphQL query schemas, resolvers, and the N+1 query problem.",
-            "How do you structure database sharding and read-replicas for massive scale?",
-            "What is object-relational mapping (ORM) and what are its performance trade-offs?",
-            "Explain OAuth 2.0 grant types and OpenID Connect workflows.",
-            "How do you design idempotent API endpoints for financial payment processing?",
-            "Explain sticky sessions, load balancing algorithms, and health check probes.",
-            "Describe how structured logging and distributed tracing (OpenTelemetry) help debug microservices."
+            "Explain the Node.js Event Loop and how asynchronous I/O is handled.",
+            "What are the main challenges in handling distributed transactions across microservices?",
+            "Explain database normalization and when you should denormalize.",
+            "How do you secure passwords using bcrypt and implement JWT authentication?",
+            "Compare Redis caching with database querying for high-traffic apps.",
+            "Explain ACID properties in relational databases.",
+            "How do you implement rate limiting and API throttling on backend servers?",
+            "What is the difference between message queues like RabbitMQ and Kafka?",
+            "How do database connection pooling and thread management work under heavy load?",
+            "Explain gRPC and how it compares to REST APIs.",
+            "What is database sharding and when should you use read replicas?",
+            "How do you handle API versioning and backward compatibility?",
+            "Explain OAuth 2.0 authorization grant workflows.",
+            "How do you structure clean architecture and domain-driven design?",
+            "What is HTTPS and how does TLS encryption work on servers?",
+            "How do you design idempotent API endpoints for payments?",
+            "What are webhooks and how do backend systems process them?",
+            "How do you monitor backend application performance and logging?",
+            "What is object-relational mapping (ORM) and its trade-offs?",
+            "How do you handle file uploads and cloud storage integration securely?"
         ],
         "Full Stack Engineer": [
-            "Walk through the complete request-response cycle from a React frontend to a Node/Express backend and MongoDB database.",
-            "How do you manage environment variables, CORS policies, and secure API gateways across staging and production?",
-            "Explain state synchronization between client-side cache (React Query/SWR) and server-side database.",
-            "How do you handle database migration strategies without breaking active production deployments?",
-            "What are WebSockets? How do you implement real-time bidirectional communication in a full-stack app?",
-            "Explain containerization using Docker and orchestrating services with Docker Compose.",
-            "How do you handle error boundaries on the frontend and centralized error middleware on the backend?",
-            "Describe your experience with CI/CD pipelines (GitHub Actions) deploying to cloud platforms like Vercel and Render.",
-            "How do you optimize payload sizes and gzip/brotli compression for full-stack web applications?",
-            "Explain how you design a multi-tenant database architecture with secure role-based access control.",
-            "How do you implement Server-Sent Events (SSE) versus WebSockets for live data feeds?",
-            "Explain atomic deployments, blue-green deployments, and canary releases.",
-            "How do you secure sensitive user credentials using HTTPS, TLS encryption, and secure headers (HSTS)?",
-            "What is Jamstack architecture and how does static site generation benefit SEO?",
-            "Explain how GraphQL and REST APIs can co-exist in a hybrid full-stack system.",
-            "How do you debug cross-origin session storage issues across different subdomains?",
-            "Explain the concept of Server Actions and Server Components in modern React/Next.js.",
-            "How do you scale file uploads to cloud storage (S3) using presigned URLs?",
-            "Describe how you handle internationalization (i18n) and localization across frontend and backend.",
-            "How do you run end-to-end (E2E) testing using Playwright or Cypress in a full-stack CI pipeline?"
+            "Walk through the complete request-response cycle from a React frontend to a Node backend and MongoDB.",
+            "How do you manage environment variables and CORS security policies?",
+            "Explain state synchronization between client cache and server database.",
+            "How do you handle zero-downtime database migrations in production?",
+            "What are WebSockets and how do you implement real-time communication?",
+            "How do you containerize applications using Docker and Docker Compose?",
+            "How do you implement centralized error handling on both frontend and backend?",
+            "Explain CI/CD deployment pipelines using GitHub Actions.",
+            "How do you optimize payload size and compression for full-stack apps?",
+            "Explain multi-tenant architecture and role-based access control.",
+            "How do you handle authentication tokens across full-stack apps?",
+            "What is serverless deployment and when should you use Vercel or Render?",
+            "How do you manage database schemas across growing applications?",
+            "Explain GraphQL query structure versus REST endpoints.",
+            "How do you implement end-to-end testing using Cypress or Playwright?",
+            "What is Jamstack architecture and its benefits?",
+            "How do you manage session storage across multi-subdomain environments?",
+            "Explain server actions and server components in modern web frameworks.",
+            "How do you handle internationalization (i18n) across full-stack apps?",
+            "How do you secure sensitive API keys and secrets in your repository?"
         ],
         "Data Scientist": [
-            "Explain the difference between supervised and unsupervised machine learning with practical examples.",
-            "How do you handle missing values, outliers, and feature scaling during data preprocessing?",
-            "What is overfitting and underfitting? How do regularization techniques (L1/L2) help solve them?",
-            "Explain precision, recall, F1-score, and ROC-AUC curve in evaluating classification models.",
-            "How do you perform Exploratory Data Analysis (EDA) using Pandas, NumPy, and Matplotlib/Seaborn?",
-            "What is dimensionality reduction? Explain Principal Component Analysis (PCA) and its use cases.",
-            "Explain gradient descent and how learning rate tuning affects convergence.",
-            "What is Natural Language Processing (NLP)? Explain TF-IDF and word embeddings like Word2Vec.",
-            "How do you deploy machine learning models into production using FastAPI or Flask?",
-            "Describe a data science project where your model insights directly influenced business decisions.",
-            "What is ensemble learning? Compare Random Forest and Gradient Boosting (XGBoost/LightGBM).",
-            "Explain Convolutional Neural Networks (CNN) architecture and image convolution operations.",
-            "What are Recurrent Neural Networks (RNN) and LSTM networks, and how do they handle sequence data?",
-            "Explain Transformer architecture, attention mechanisms, and Self-Attention in LLMs.",
-            "How do you prevent data leakage during train-test splits and cross-validation?",
-            "Explain A/B testing methodology, p-values, and statistical significance in product experimentation.",
-            "What is generative AI and how do GANs (Generative Adversarial Networks) work?",
-            "How do vector databases (Pinecone/ChromaDB) enable Retrieval-Augmented Generation (RAG)?",
-            "Explain hyperparameter tuning techniques like Grid Search, Random Search, and Bayesian Optimization.",
-            "How do you handle imbalanced datasets using SMOTE, class weighting, or undersampling?"
+            "What is the difference between supervised and unsupervised machine learning?",
+            "How do you handle missing values and outliers during data preprocessing?",
+            "Explain overfitting and how L1/L2 regularization prevents it.",
+            "What metrics do you use to evaluate classification models (Precision, Recall, F1)?",
+            "Explain Principal Component Analysis (PCA) for dimensionality reduction.",
+            "How does gradient descent work in optimizing machine learning models?",
+            "What is Natural Language Processing and how does TF-IDF work?",
+            "How do you deploy machine learning models using FastAPI or Flask?",
+            "What is ensemble learning (Random Forest vs XGBoost)?",
+            "Explain how vector databases enable RAG (Retrieval-Augmented Generation).",
+            "How do you handle imbalanced datasets in machine learning?",
+            "What is exploratory data analysis (EDA) and why is it important?",
+            "Explain Convolutional Neural Networks (CNN) for image processing.",
+            "How do Recurrent Neural Networks and LSTMs handle sequential data?",
+            "What is transformer architecture and self-attention mechanism?",
+            "How do you perform A/B testing and calculate statistical significance?",
+            "What is hyperparameter tuning and how does grid search work?",
+            "How do you prevent data leakage in cross-validation?",
+            "What is generative AI and how do GANs function?",
+            "How do you translate business metrics into data science problem statements?"
         ],
         "Cybersecurity Analyst": [
-            "Explain the CIA triad (Confidentiality, Integrity, Availability) in information security.",
-            "What is the OWASP Top 10? Explain SQL Injection and how to prevent it using parameterized queries.",
-            "Explain the difference between symmetric and asymmetric encryption algorithms.",
-            "What is a Man-in-the-Middle (MitM) attack and how does HTTPS/SSL handshake mitigate it?",
-            "How do you perform vulnerability assessment and penetration testing (VAPT)?",
-            "Explain Multi-Factor Authentication (MFA) and zero-trust security models.",
-            "What is a SIEM (Security Information and Event Management) system and how does log analysis work?",
-            "Explain the incident response lifecycle (Preparation, Detection, Containment, Eradication, Recovery).",
-            "What is phishing and how do security awareness programs prevent social engineering attacks?",
-            "Explain firewall configurations, IDS/IPS systems, and network segmentation.",
-            "What is a Zero-Day vulnerability and how do organizations mitigate unknown threats?",
-            "Explain Public Key Infrastructure (PKI) and digital certificate management.",
-            "What are buffer overflow attacks and how do ASLR and DEP prevent memory exploitation?",
-            "Explain DNS spoofing, ARP poisoning, and rogue access point security threats.",
-            "What is ransomware and what are the best offline backup policies for business continuity?",
-            "Explain role-based access control (RBAC) versus attribute-based access control (ABAC).",
-            "How do honeypots and deception technology assist in intrusion detection?",
-            "Explain the MITRE ATT&CK framework and how SOC teams use threat intelligence.",
-            "What are secure coding practices for API authentication, rate limiting, and input sanitization?",
-            "Describe a security breach scenario and walk through your threat containment protocol."
+            "Explain the CIA triad in information security.",
+            "What is SQL Injection and how do parameterized queries prevent it?",
+            "Explain the difference between symmetric and asymmetric encryption.",
+            "How does an HTTPS/SSL handshake prevent Man-in-the-Middle attacks?",
+            "What is the OWASP Top 10 and why is it important?",
+            "Explain the incident response lifecycle during a security breach.",
+            "What is Multi-Factor Authentication and why is zero-trust important?",
+            "How do SIEM systems assist in security log analysis?",
+            "What are buffer overflow vulnerabilities and how do ASLR and DEP protect against them?",
+            "Explain role-based access control (RBAC) in enterprise systems.",
+            "What is phishing and how do organizations prevent social engineering?",
+            "Explain network segmentation and firewall configurations.",
+            "What is a zero-day vulnerability and how do teams mitigate unknown threats?",
+            "Explain Public Key Infrastructure (PKI) and digital certificates.",
+            "What is ransomware and what are the best backup recovery policies?",
+            "How do honeypots assist in intrusion detection systems?",
+            "Explain the MITRE ATT&CK framework for threat intelligence.",
+            "What are secure coding practices for input sanitization?",
+            "How do you conduct vulnerability assessment and penetration testing (VAPT)?",
+            "Walk through your protocol for containing an active security breach."
         ],
         "Cloud & DevOps Engineer": [
-            "Explain the core components of Docker (Images, Containers, Dockerfile, Volumes).",
-            "What is Kubernetes? Explain pods, deployments, services, and ingress controllers.",
-            "How do you implement Infrastructure as Code (IaC) using Terraform or AWS CloudFormation?",
-            "Explain CI/CD pipelines and how automated testing integrates into deployment workflows.",
-            "What are the key differences between AWS EC2, S3, RDS, and Lambda serverless architectures?",
-            "How do you manage cloud security, IAM roles, security groups, and VPC peering?",
-            "Explain load balancing strategies and auto-scaling groups for high-availability systems.",
-            "What is monitoring and observability? Compare Prometheus, Grafana, and ELK stack.",
-            "How do you manage database backups, disaster recovery, and zero-downtime deployments?",
-            "Explain GitOps principles and continuous delivery using ArgoCD.",
+            "What are the core components of Docker (Images, Containers, Dockerfile)?",
+            "Explain Kubernetes pods, deployments, and services.",
+            "How do you implement Infrastructure as Code using Terraform?",
+            "What are the key differences between EC2, S3, and Lambda in AWS?",
+            "How do you manage cloud security using IAM roles and security groups?",
+            "Explain load balancing strategies and auto-scaling groups for high availability.",
+            "What is the difference between Prometheus and Grafana for monitoring?",
+            "How do you manage zero-downtime deployments and blue-green strategies?",
+            "Explain GitOps principles and continuous delivery with ArgoCD.",
+            "How do you manage secrets securely using HashiCorp Vault or AWS Secrets Manager?",
             "What is immutable infrastructure and how do Packer and Ansible support it?",
-            "Explain Kubernetes Helm charts and release management across environments.",
-            "How do you manage secret keys and credentials using HashiCorp Vault or AWS Secrets Manager?",
-            "What are cloud-native microservices mesh architectures like Istio or Linkerd?",
-            "Explain chaos engineering principles and testing system resilience with Gremlin/Chaos Mesh.",
-            "How do cost optimization tools (FinOps) help manage AWS/Azure/GCP cloud spend?",
-            "Explain multi-region active-active deployment setups and DNS failover with Route 53.",
-            "What is Linux kernel cgroups and namespaces, and how do they enable container isolation?",
-            "Explain serverless cold start latency issues and provisioned concurrency solutions.",
-            "How do you construct automated rollback mechanisms when production deployments report high error rates?"
+            "Explain Kubernetes Helm charts and release management.",
+            "What is service mesh architecture like Istio or Linkerd?",
+            "How do you perform chaos engineering tests on cloud systems?",
+            "What are FinOps practices for cloud cost optimization?",
+            "Explain multi-region active-active deployment and DNS failover.",
+            "How do Linux cgroups and namespaces provide container isolation?",
+            "What causes serverless cold start latency and how do you resolve it?",
+            "How do you implement automated rollbacks on production deployment failures?",
+            "What is VPC peering and how do you configure secure network routes?"
         ]
     };
 
@@ -268,11 +268,10 @@ export default function InterviewPage() {
         if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
             const customT = targetTopic.trim() || targetBranch.trim() || targetRole;
             pool = [
-                `Explain the fundamental architecture and core design principles of ${customT} at a ${targetDifficulty.toLowerCase()} level.`,
-                `How do you handle performance tuning and practical execution when working with ${customT}?`,
-                `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`,
-                `Compare ${customT} with alternative domains and explain when it is the preferred choice.`,
-                `Walk through a complex scenario or bug you encountered related to ${customT} and how you resolved it.`
+                `What are the core concepts and architecture of ${customT}?`,
+                `How do you handle practical execution and performance tuning in ${customT}?`,
+                `What are the most common challenges and solutions when working with ${customT}?`,
+                `Why is ${customT} preferred for modern applications and systems?`
             ];
         }
 
@@ -297,13 +296,46 @@ export default function InterviewPage() {
         setTimeLeft(60);
         setIsTimerRunning(false);
 
-        // Seedha local robust question bank se random unique question uthao taaki repeat na ho
-        setTimeout(() => {
+        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/api/interview/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    role: effectiveRole, 
+                    topic: effectiveTopic, 
+                    difficulty, 
+                    language: selectedLanguage,
+                    excludeQuestions: askedQuestions 
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedQ = data.question;
+                if (fetchedQ && !askedQuestions.includes(fetchedQ)) {
+                    setQuestion(fetchedQ);
+                    setAskedQuestions(prev => [...prev, fetchedQ]);
+                    setIsTimerRunning(true);
+                    setLoading(false);
+                    return;
+                }
+            }
+            throw new Error('API Key Failed or Network Issue');
+        } catch (err) {
+            // Fallback to local 20 curated questions if API fails
             const fallbackQ = getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty);
             setQuestion(fallbackQ);
             setIsTimerRunning(true);
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     const handleSubmitAnswer = async () => {
@@ -314,16 +346,49 @@ export default function InterviewPage() {
         setIsTimerRunning(false);
         setEvaluating(true);
         const activeDomain = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const activeTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
 
-        setTimeout(() => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    topic: activeTopic || activeDomain, 
+                    role: activeDomain,
+                    question, 
+                    answer, 
+                    currentDifficulty: difficulty,
+                    language: selectedLanguage,
+                    excludeQuestions: askedQuestions 
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.evaluation) {
+                    setEvaluation(data.evaluation);
+                    if (data.evaluation.nextQuestion) {
+                        setAskedQuestions(prev => [...prev, data.evaluation.nextQuestion]);
+                    }
+                    setEvaluating(false);
+                    return;
+                }
+            }
+            throw new Error('Evaluation error');
+        } catch (err) {
             setEvaluation({
                 score: 88,
                 feedback: `Your technical response for ${activeDomain} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
                 nextDifficulty: difficulty,
                 nextQuestion: getLocalRoleOrTopicQuestion(role, course, branch, topic, difficulty)
             });
+        } finally {
             setEvaluating(false);
-        }, 500);
+        }
     };
 
     return (
@@ -443,7 +508,7 @@ export default function InterviewPage() {
                         </select>
                     </div>
 
-                    {/* Custom Fields */}
+                    {/* Custom Fields with Exact Placeholders */}
                     <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
                         <div>
                             <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>🎓 Custom Course / Stream:</label>
