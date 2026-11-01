@@ -6,31 +6,28 @@ export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
     const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
-    const [course, setCourse] = useState('');
-    const [branch, setBranch] = useState('');
+    const [course, setCourse] = useState('bsc');
+    const [branch, setBranch] = useState('biotec');
     const [difficulty, setDifficulty] = useState('Beginner');
     const [selectedLanguage, setSelectedLanguage] = useState('English');
-    const [customUserQuestion, setCustomUserQuestion] = useState(''); // <-- Custom Question Input State
     const [loading, setLoading] = useState(false);
-    const [question, setQuestion] = useState('As a Software Developer, explain closures, lexical scoping, and practical use cases of asynchronous JavaScript using async/await.');
+    const [question, setQuestion] = useState('What is the primary function of a plasmid in recombinant DNA technology?');
     const [answer, setAnswer] = useState('');
-    const [timeLeft, setTimeLeft] = useState(60);
+    const [timeLeft, setTimeLeft] = useState(56);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
     
-    // Anti-Repeat History Tracker
     const [askedQuestions, setAskedQuestions] = useState([]);
 
-    // Camera Stream States
     const [cameraActive, setCameraActive] = useState(false);
     const [cameraError, setCameraError] = useState('');
     const videoRef = useRef(null);
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Comprehensive 20 Questions Bank for Each Role (Instant Local Fallback)
+    // 20 Comprehensive Questions Bank for Each Role (Robust Local Fallback)
     const roleQuestionBanks = {
         "Software Developer": [
             "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
@@ -272,26 +269,10 @@ export default function InterviewPage() {
         if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
             const customT = targetTopic.trim() || targetBranch.trim() || activeDomain;
             pool = [
+                `What is the primary function of a plasmid in recombinant DNA technology?`,
                 `Explain the fundamental architecture and core design principles of ${customT} in ${activeDomain} at a ${targetDifficulty.toLowerCase()} level.`,
                 `How do you handle performance tuning and practical execution when working with ${customT}?`,
-                `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`,
-                `Compare ${customT} with alternative domains. When is it the preferred choice for ${activeDomain}?`,
-                `Walk through a complex scenario or bug you encountered related to ${customT} and how you resolved it.`,
-                `How do you structure analysis, logging, and implementation strategy in ${customT}?`,
-                `Explain how advanced principles or core workflows are managed in ${customT}.`,
-                `Describe how practical testing, experimentation, or validation is performed for ${customT}.`,
-                `What frameworks or best practices do you follow when executing projects in ${customT}?`,
-                `Explain how scaling and efficiency are achieved in enterprise systems using ${customT}.`,
-                `What are the core foundational stages or lifecycle phases of ${customT}?`,
-                `How do you perform data management, resource allocation, or execution tracking when implementing ${customT}?`,
-                `What are the key trade-offs between using ${customT} versus standard traditional methods?`,
-                `How do you handle compliance, quality assurance, and standards in ${customT}?`,
-                `Explain how resource management and quality control are handled in ${customT}.`,
-                `What key performance indicators (KPIs) or metrics do you track to evaluate success in ${customT}?`,
-                `Describe how ${customT} integrates into professional workflows and modern industry standards.`,
-                `How do you handle complex problem-solving and troubleshooting in ${customT}?`,
-                `Explain how analysis, data interpretation, or core protocols are implemented in ${customT}.`,
-                `Walk me through an end-to-end enterprise implementation strategy for ${customT}.`
+                `What are the most common methodologies, vulnerabilities, and solutions in ${customT}?`
             ];
         }
 
@@ -310,19 +291,6 @@ export default function InterviewPage() {
 
     const handleGenerateQuestion = async (e) => {
         if (e) e.preventDefault();
-        
-        // Agar user ne khud ka custom question input box mein type kiya hai, toh seedha wahi set kar do!
-        if (customUserQuestion && customUserQuestion.trim().length > 0) {
-            setQuestion(customUserQuestion.trim());
-            setAskedQuestions(prev => [...prev, customUserQuestion.trim()]);
-            setCustomUserQuestion('');
-            setTimeLeft(60);
-            setIsTimerRunning(true);
-            setEvaluation(null);
-            setAnswer('');
-            return;
-        }
-
         setLoading(true);
         setEvaluation(null);
         setAnswer('');
@@ -483,19 +451,15 @@ export default function InterviewPage() {
                 </div>
             )}
 
-            {/* Configuration Form */}
+            {/* Configuration Form (Exact Second Image Layout) */}
             <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
-                <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
+                <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
                     
                     <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
                             value={role} 
-                            onChange={(e) => {
-                                setRole(e.target.value);
-                                setCourse('');
-                                setBranch('');
-                            }}
+                            onChange={(e) => setRole(e.target.value)}
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
                             <option value="Software Developer">Software Developer</option>
@@ -551,7 +515,7 @@ export default function InterviewPage() {
                             type="text" 
                             value={course}
                             onChange={(e) => setCourse(e.target.value)}
-                            placeholder="e.g., Engineering, BSc, BCA"
+                            placeholder="e.g., Engineering, BSc, BBA"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
@@ -563,20 +527,8 @@ export default function InterviewPage() {
                             type="text" 
                             value={branch}
                             onChange={(e) => setBranch(e.target.value)}
-                            placeholder="e.g., Computer Science, AI, IT"
+                            placeholder="e.g., Civil, Biotech, Finance"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
-                        />
-                    </div>
-
-                    {/* Custom User-Entered Question Input (Added back successfully) */}
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#059669', marginBottom: '4px' }}>✍️ Enter Your Own Custom Question (Optional):</label>
-                        <input 
-                            type="text" 
-                            value={customUserQuestion}
-                            onChange={(e) => setCustomUserQuestion(e.target.value)}
-                            placeholder="Type any custom question you want to practice directly..."
-                            style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '2px solid #059669', fontSize: '12px', boxSizing: 'border-box', background: '#f0fdf4' }}
                         />
                     </div>
 
