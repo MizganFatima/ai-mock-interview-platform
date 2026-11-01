@@ -19,10 +19,10 @@ export default function InterviewPage() {
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
     
-    // Persistent asked questions storage for mobile and desktop to prevent repetition
+    // Robust local storage persistence to prevent repetition on mobile devices
     const [askedQuestions, setAskedQuestions] = useState(() => {
         if (typeof window !== 'undefined') {
-            const saved = sessionStorage.getItem('askedQuestions');
+            const saved = localStorage.getItem('interview_asked_questions');
             return saved ? JSON.parse(saved) : [];
         }
         return [];
@@ -30,7 +30,7 @@ export default function InterviewPage() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem('askedQuestions', JSON.stringify(askedQuestions));
+            localStorage.setItem('interview_asked_questions', JSON.stringify(askedQuestions));
         }
     }, [askedQuestions]);
 
@@ -38,7 +38,7 @@ export default function InterviewPage() {
     const [cameraError, setCameraError] = useState('');
     const videoRef = useRef(null);
 
-    // 20 Pure Theory & Conceptual Interview Questions Bank per Role (No Code Puzzles)
+    // 20 Pure Theory & Conceptual Interview Questions Bank per Role
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -291,8 +291,9 @@ export default function InterviewPage() {
         if (unasked.length > 0) {
             selected = unasked[Math.floor(Math.random() * unasked.length)];
         } else {
-            selected = pool[Math.floor(Math.random() * pool.length)];
+            // Agar saare questions khatam ho jayein tab list reset karo
             setAskedQuestions([]);
+            selected = pool[Math.floor(Math.random() * pool.length)];
         }
 
         setAskedQuestions(prev => [...prev, selected]);
