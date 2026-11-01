@@ -29,7 +29,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Comprehensive 20 Questions Bank for Each Pre-defined Role (Safe Fallback)
+    // Comprehensive 20 Questions Bank for Each Pre-defined Role (Safe Instant Fallback)
     const roleQuestionBanks = {
         "Software Developer": [
             "Explain the principles of Object-Oriented Programming and how you apply polymorphism in real-world projects.",
@@ -409,12 +409,20 @@ export default function InterviewPage() {
                         Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
                     </p>
                 </div>
-                <button 
-                    onClick={() => router.push('/dashboard')}
-                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
-                >
-                    ← Back to Dashboard
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                        onClick={() => router.push('/resume-analyzer')}
+                        style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
+                    >
+                        📄 Resume Analyzer
+                    </button>
+                    <button 
+                        onClick={() => router.push('/dashboard')}
+                        style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
+                    >
+                        ← Back to Dashboard
+                    </button>
+                </div>
             </div>
 
             {/* Proctoring Bar */}
@@ -460,7 +468,6 @@ export default function InterviewPage() {
             <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
                 <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', alignItems: 'flex-end' }}>
                     
-                    {/* Standard Pre-defined Roles Dropdown */}
                     <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
                         <select 
@@ -482,21 +489,19 @@ export default function InterviewPage() {
                         </select>
                     </div>
 
-                    {/* Sub-Topic / Skill Input */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill (Optional)</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill</label>
                         <input 
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. JavaScript, React, SQL"
+                            placeholder="e.g. JavaScript, Python, SQL"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
 
-                    {/* Difficulty */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Difficulty</label>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Difficulty Level</label>
                         <select 
                             value={difficulty} 
                             onChange={(e) => setDifficulty(e.target.value)}
@@ -508,147 +513,96 @@ export default function InterviewPage() {
                         </select>
                     </div>
 
-                    {/* Language */}
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Language</label>
-                        <select 
-                            value={selectedLanguage} 
-                            onChange={(e) => setSelectedLanguage(e.target.value)}
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
-                        >
-                            <option value="English">English</option>
-                            <option value="Hindi">Hindi</option>
-                            <option value="Hinglish">Hinglish</option>
-                        </select>
-                    </div>
-
-                    {/* Separate Course & Branch Inputs Side-by-Side */}
-                    <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px' }}>
-                                🎓 Custom Course / Stream:
-                            </label>
-                            <input 
-                                type="text" 
-                                value={course}
-                                onChange={(e) => {
-                                    setCourse(e.target.value);
-                                    if(e.target.value.trim()) setTopic('');
-                                }}
-                                placeholder="e.g., Engineering, BSc, BBA"
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '12px', boxSizing: 'border-box', background: '#ffffff' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#1e40af', marginBottom: '4px' }}>
-                                🌿 Custom Branch / Specialization:
-                            </label>
-                            <input 
-                                type="text" 
-                                value={branch}
-                                onChange={(e) => {
-                                    setBranch(e.target.value);
-                                    if(e.target.value.trim()) setTopic('');
-                                }}
-                                placeholder="e.g., Civil, Biotech, Finance"
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #93c5fd', fontSize: '12px', boxSizing: 'border-box', background: '#ffffff' }}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
                         <button 
                             type="submit" 
                             disabled={loading}
-                            style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer', width: '100%' }}
+                            style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '9px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
                         >
-                            {loading ? 'Generating Question...' : '✨ Generate New Unique Question'}
+                            {loading ? 'Generating...' : '✨ Generate New Question'}
                         </button>
                     </div>
                 </form>
             </div>
 
-            {/* Active Question Display & Timer */}
-            {question && (
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
-                            Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic || (course.trim() ? `${course} ${branch}` : role)} | Level: {difficulty}
+            {/* Active Interview Question Workspace */}
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                    <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
+                        Target: {course.trim() ? `${course} ${branch}` : role} ({difficulty})
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'gap: 12px', gap: '12px' }}>
+                        <button 
+                            onClick={speakQuestion}
+                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                            🔊 Read Question
+                        </button>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: timeLeft <= 15 ? '#dc2626' : '#0f172a' }}>
+                            ⏳ {timeLeft}s remaining
                         </span>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '12px', fontWeight: '700', color: timeLeft < 15 ? '#dc2626' : '#2563eb', background: timeLeft < 15 ? '#fee2e2' : '#eff6ff', padding: '4px 10px', borderRadius: '6px' }}>
-                                ⏱️ Time Left: {timeLeft}s
-                            </span>
+                    </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', marginBottom: '18px', fontSize: '15px', fontWeight: '600', color: '#1e293b', lineHeight: '1.5' }}>
+                    {question}
+                </div>
+
+                {!evaluation ? (
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Your Answer:</label>
                             <button 
-                                onClick={speakQuestion}
-                                style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
+                                type="button"
+                                onClick={startListening}
+                                style={{ background: isListening ? '#fee2e2' : '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', color: isListening ? '#dc2626' : '#334155' }}
                             >
-                                🔊 Listen Question
+                                {isListening ? '🎙️ Listening... (Speak now)' : '🎤 Use Voice Answer'}
+                            </button>
+                        </div>
+
+                        <textarea 
+                            rows="5"
+                            value={answer}
+                            onChange={(e) => setAnswer(e.target.value)}
+                            placeholder="Type or speak your technical explanation here..."
+                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '14px', lineHeight: '1.5' }}
+                        />
+
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                            <button 
+                                onClick={handleSubmitAnswer}
+                                disabled={evaluating}
+                                style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                {evaluating ? 'Evaluating...' : '✅ Submit Answer for Review'}
+                            </button>
+
+                            <button 
+                                onClick={handleGenerateQuestion}
+                                style={{ background: '#64748b', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                ⏭️ Skip / Next Question
                             </button>
                         </div>
                     </div>
-                    <p style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', margin: '10px 0 0 0', lineHeight: '1.5' }}>
-                        {question}
-                    </p>
-                </div>
-            )}
-
-            {/* Answer Input Workspace */}
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>Your Technical Answer:</label>
-                    <button 
-                        type="button"
-                        onClick={startListening}
-                        style={{ background: isListening ? '#fee2e2' : '#f1f5f9', color: isListening ? '#dc2626' : '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-                    >
-                        {isListening ? '🎙️ Listening...' : '🎤 Voice Input'}
-                    </button>
-                </div>
-                <textarea 
-                    rows="6"
-                    value={answer}
-                    onChange={(e) => setAnswer(e.target.value)}
-                    placeholder="Type your structured technical explanation here or use voice input..."
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', boxSizing: 'border-box', outline: 'none', resize: 'vertical' }}
-                />
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px', gap: '10px', flexWrap: 'wrap' }}>
-                    <button 
-                        onClick={handleGenerateQuestion}
-                        style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '10px 18px', borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}
-                    >
-                        Skip / Next Question →
-                    </button>
-                    <button 
-                        onClick={handleSubmitAnswer}
-                        disabled={evaluating || !answer.trim()}
-                        style={{ background: evaluating ? '#93c5fd' : '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: evaluating ? 'not-allowed' : 'pointer' }}
-                    >
-                        {evaluating ? 'Evaluating with AI...' : 'Submit Answer'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Evaluation Results Card */}
-            {evaluation && (
-                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '20px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '0 0 10px 0' }}>🎯 AI Evaluation & Scorecard</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Score Awarded:</span>
-                        <span style={{ fontSize: '16px', fontWeight: '800', background: '#059669', color: '#ffffff', padding: '2px 12px', borderRadius: '20px' }}>
-                            {evaluation.score}/100
-                        </span>
-                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>
-                            Next Difficulty Tier: <strong style={{ color: '#2563eb' }}>{evaluation.nextDifficulty}</strong>
-                        </span>
+                ) : (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '20px' }}>
+                        <h3 style={{ color: '#065f46', margin: '0 0 8px 0', fontSize: '16px', fontWeight: '800' }}>📊 Recruiter Evaluation Report</h3>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: '800', color: '#047857', fontSize: '15px' }}>Score: {evaluation.score}/100</p>
+                        <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#065f46', lineHeight: '1.5' }}>{evaluation.feedback}</p>
+                        <button 
+                            onClick={() => {
+                                setEvaluation(null);
+                                handleGenerateQuestion();
+                            }}
+                            style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                        >
+                            Next Question →
+                        </button>
                     </div>
-                    <p style={{ fontSize: '13px', color: '#334155', lineHeight: '1.6', margin: 0, background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <strong>Detailed Critique:</strong> {evaluation.feedback}
-                    </p>
-                </div>
-            )}
-
+                )}
+            </div>
         </div>
     );
 }
