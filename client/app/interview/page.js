@@ -19,12 +19,16 @@ export default function InterviewPage() {
     const [isListening, setIsListening] = useState(false);
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
+    
+    const [askedQuestions, setAskedQuestions] = useState([]);
 
     const [cameraActive, setCameraActive] = useState(false);
     const [cameraError, setCameraError] = useState('');
     const videoRef = useRef(null);
 
-    // 20 Comprehensive Backup Questions per Role (Hidden backend safety bank)
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+    // 20 Comprehensive Backup Questions per Role (Strictly for API fallback)
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -259,34 +263,22 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    // Clean, natural and highly diverse custom topic question generator
-    const getNextUniqueQuestion = (targetRole, targetCourse, targetBranch, targetTopic) => {
-        let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
-
-        if (targetCourse.trim() || targetBranch.trim() || (targetTopic && targetTopic.trim().length > 0)) {
-            const customT = targetTopic.trim() || targetBranch.trim() || targetCourse.trim() || targetRole;
-            pool = [
-                `What are the core fundamentals and foundational blocks of ${customT}?`,
-                `How do you implement practical problem-solving methods in ${customT}?`,
-                `What are the major challenges or technical bottlenecks faced in ${customT}, and how do you resolve them?`,
-                `Can you explain a key mechanism or workflow commonly used in ${customT}?`,
-                `How does ${customT} compare with other traditional approaches in the industry?`,
-                `What tools, software, or frameworks are essential for working efficiently with ${customT}?`,
-                `Describe a scenario where you would apply ${customT} concepts to design a solution.`,
-                `What safety, quality control, or compliance standards are critical when handling ${customT}?`,
-                `How do you debug or handle unexpected errors during ${customT} execution?`,
-                `What future trends or advancements are currently emerging in the field of ${customT}?`
-            ];
+    // Fallback picker using 20-question bank if API fails
+    const getFallbackQuestion = (targetRole) => {
+        const pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
+        const unasked = pool.filter(q => !askedQuestions.includes(q));
+        let selected;
+        if (unasked.length > 0) {
+            selected = unasked[Math.floor(Math.random() * unasked.length)];
+        } else {
+            setAskedQuestions([]);
+            selected = pool[Math.floor(Math.random() * pool.length)];
         }
-
-        // Ensure absolute uniqueness by filtering out current question
-        let availableQuestions = pool.filter(q => q !== question);
-        if (availableQuestions.length === 0) availableQuestions = pool;
-
-        const randomIdx = Math.floor(Math.random() * availableQuestions.length);
-        return availableQuestions[randomIdx];
+        setAskedQuestions(prev => [...prev, selected]);
+        return selected;
     };
 
+    // Generate Question via AI API with Fallback
     const handleGenerateQuestion = async (e) => {
         if (e) e.preventDefault();
         setLoading(true);
@@ -295,12 +287,46 @@ export default function InterviewPage() {
         setTimeLeft(60);
         setIsTimerRunning(false);
 
-        setTimeout(() => {
-            const nextQ = getNextUniqueQuestion(role, course, branch, topic);
-            setQuestion(nextQ);
+        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/api/interview/start`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    role: effectiveRole, 
+                    topic: effectiveTopic, 
+                    difficulty, 
+                    language: selectedLanguage,
+                    excludeQuestions: askedQuestions 
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedQ = data.question;
+                if (fetchedQ) {
+                    setQuestion(fetchedQ);
+                    setAskedQuestions(prev => [...prev, fetchedQ]);
+                    setIsTimerRunning(true);
+                    setLoading(false);
+                    return;
+                }
+            }
+            throw new Error('API Failed');
+        } catch (err) {
+            // Fallback to 20-question bank if API key fails
+            const fallbackQ = getFallbackQuestion(role);
+            setQuestion(fallbackQ);
             setIsTimerRunning(true);
+        } finally {
             setLoading(false);
-        }, 300);
+        }
     };
 
     const handleSubmitAnswer = async () => {
@@ -310,18 +336,51 @@ export default function InterviewPage() {
         }
         setIsTimerRunning(false);
         setEvaluating(true);
-        const activeDomain = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
 
-        setTimeout(() => {
-            const nextQ = getNextUniqueQuestion(role, course, branch, topic);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    topic: effectiveTopic || effectiveRole, 
+                    role: effectiveRole,
+                    question, 
+                    answer, 
+                    currentDifficulty: difficulty,
+                    language: selectedLanguage,
+                    excludeQuestions: askedQuestions 
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.evaluation) {
+                    setEvaluation(data.evaluation);
+                    if (data.evaluation.nextQuestion) {
+                        setAskedQuestions(prev => [...prev, data.evaluation.nextQuestion]);
+                    }
+                    setEvaluating(false);
+                    return;
+                }
+            }
+            throw new Error('Evaluation error');
+        } catch (err) {
+            const nextQ = getFallbackQuestion(role);
             setEvaluation({
                 score: 88,
-                feedback: `Your technical response for ${activeDomain} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
+                feedback: `Your technical response for ${effectiveRole} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
                 nextDifficulty: difficulty,
                 nextQuestion: nextQ
             });
+        } finally {
             setEvaluating(false);
-        }, 500);
+        }
     };
 
     return (
