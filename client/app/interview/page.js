@@ -26,7 +26,99 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Backup Questions per Role (Safety fallback only)
+    // 20 Comprehensive Backup Questions per Language / Sub-Topic
+    const subTopicQuestionBanks = {
+        "java": [
+            "What are the core features and object-oriented principles of Java?",
+            "Explain the difference between JDK, JRE, and JVM in Java.",
+            "What is method overloading and method overriding in Java?",
+            "How does garbage collection work in Java?",
+            "What is the difference between String, StringBuilder, and StringBuffer?",
+            "Explain the concept of interface and abstract class in Java.",
+            "What are Java exceptions and how does try-catch-finally work?",
+            "What is multithreading in Java and how do you create a thread?",
+            "Explain the Java Collections Framework and difference between ArrayList and LinkedList.",
+            "What are lambda expressions and functional interfaces in Java 8?",
+            "How do synchronization blocks prevent thread interference in Java?",
+            "What is the role of the final keyword with variables, methods, and classes?",
+            "Explain volatile and transient keywords in Java multithreading.",
+            "What are Generics in Java and how does type erasure work?",
+            "How do you implement the Singleton design pattern securely in Java?",
+            "What is the difference between Comparable and Comparator interfaces?",
+            "Explain the Java Stream API and its performance benefits.",
+            "What are Java annotations and how do custom annotations work?",
+            "How does dependency injection simplify enterprise Java applications?",
+            "What are memory leaks in Java and how do you detect them using profilers?"
+        ],
+        "c++": [
+            "What is the difference between C and C++?",
+            "Explain object-oriented programming pillars in C++ (Encapsulation, Inheritance, Polymorphism).",
+            "What are constructors and destructors in C++?",
+            "What is the difference between shallow copy and deep copy?",
+            "Explain pointers and references in C++.",
+            "What is operator overloading in C++?",
+            "How does memory allocation work using new and delete versus malloc and free?",
+            "What are virtual functions and polymorphism in C++?",
+            "Explain the Standard Template Library (STL) containers like vectors and maps.",
+            "What is a template in C++ and how do function templates work?",
+            "What is RAII (Resource Acquisition Is Initialization) in C++?",
+            "Explain smart pointers in C++ (unique_ptr, shared_ptr, weak_ptr).",
+            "What is move semantics and rvalue references in modern C++?",
+            "How do friend functions and friend classes work in C++?",
+            "What are pure virtual functions and abstract classes in C++?",
+            "Explain exception handling mechanisms using try, catch, and throw in C++.",
+            "What is the difference between stack and heap memory allocation in C++?",
+            "How do lambda expressions function in C++11 and later?",
+            "What is name mangling and how does extern \"C\" resolve it?",
+            "How do you optimize loop performance and memory alignment in C++?"
+        ],
+        "python": [
+            "What are the key features of Python and why is it interpreted?",
+            "Explain mutable and immutable data types in Python with examples.",
+            "What are decorators in Python and how do you use them?",
+            "How does memory management work in Python using reference counting and garbage collection?",
+            "What is the difference between deepcopy and copy modules?",
+            "Explain generators and the yield keyword in Python.",
+            "How do you handle exceptions using try, except, and finally blocks?",
+            "What are list comprehensions and how do they improve code readability?",
+            "Explain the Global Interpreter Lock (GIL) in Python and its impact.",
+            "What are lambda functions and how do they differ from regular functions?",
+            "What are Python magic methods (dunder methods) and how do they work?",
+            "Explain the difference between class methods, static methods, and regular methods.",
+            "How do you manage virtual environments and package dependencies using pip?",
+            "What are args and kwargs in Python function definitions?",
+            "Explain asynchronous programming in Python using asyncio and async/await.",
+            "How do context managers and the with statement work in Python?",
+            "What is monkey patching in Python and when is it used?",
+            "Explain pandas dataframes and data cleaning techniques in Python.",
+            "How do you serialize and deserialize Python objects using pickle or json?",
+            "What are metaclasses in Python and what is their primary use case?"
+        ],
+        "javascript": [
+            "What is the difference between var, let, and const in JavaScript?",
+            "Explain JavaScript closures and how they retain lexical scope.",
+            "How does asynchronous programming work using Promises and async/await?",
+            "What is the event loop and how does the call stack interact with the callback queue?",
+            "Explain prototype-based inheritance in JavaScript.",
+            "What is the difference between == and === operators?",
+            "How do higher-order functions like map, filter, and reduce work?",
+            "What is event bubbling and event delegation in the DOM?",
+            "How do you handle errors using try...catch in JavaScript?",
+            "What is destructuring assignment and spread/rest operator in ES6?",
+            "What are JavaScript generators and how do iterator protocols work?",
+            "Explain CORS and how web browsers handle cross-origin security headers.",
+            "What is memoization and how do you optimize recursive functions in JavaScript?",
+            "How do JavaScript modules (import/export) work across files?",
+            "What is structural typing versus nominal typing in web applications?",
+            "Explain how the 'this' keyword behaves in various execution contexts.",
+            "What are service workers and how do they power progressive web applications?",
+            "How do you prevent memory leaks in single-page JavaScript applications?",
+            "What is currying in functional programming using JavaScript?",
+            "How do web workers enable multithreaded background processing in browsers?"
+        ]
+    };
+
+    // 20 Comprehensive Backup Questions per Role
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -280,8 +372,23 @@ export default function InterviewPage() {
         } catch (e) {}
     };
 
-    const getFallbackQuestion = (targetRole) => {
-        const pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
+    const getFastFallbackQuestion = (targetRole, targetTopic, targetCourse, targetBranch) => {
+        let pool = [];
+        const lowerTopic = targetTopic.toLowerCase().trim();
+
+        // 1. Check Sub-Topic / Language Bank (Java, C++, Python, JavaScript)
+        for (const key of Object.keys(subTopicQuestionBanks)) {
+            if (lowerTopic.includes(key)) {
+                pool = subTopicQuestionBanks[key];
+                break;
+            }
+        }
+
+        // 2. Fallback to Role Question Bank (20 questions per role)
+        if (pool.length === 0) {
+            pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
+        }
+
         const asked = getStoredAskedQuestions();
         const unasked = pool.filter(q => !asked.includes(q) && q !== question);
         let selected;
@@ -307,6 +414,9 @@ export default function InterviewPage() {
         const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
         const currentAsked = getStoredAskedQuestions();
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(`${API_BASE}/api/interview/start`, {
@@ -321,8 +431,10 @@ export default function InterviewPage() {
                     difficulty, 
                     language: selectedLanguage,
                     excludeQuestions: currentAsked 
-                })
+                }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
             if (response.ok) {
                 const data = await response.json();
@@ -335,10 +447,10 @@ export default function InterviewPage() {
                     return;
                 }
             }
-            throw new Error('API Failed or Duplicate');
+            throw new Error('API Timeout or Failure');
         } catch (err) {
-            const fallbackQ = getFallbackQuestion(role);
-            setQuestion(fallbackQ);
+            const fastQ = getFastFallbackQuestion(role, topic, course, branch);
+            setQuestion(fastQ);
             setIsTimerRunning(true);
         } finally {
             setLoading(false);
@@ -388,7 +500,7 @@ export default function InterviewPage() {
             }
             throw new Error('Evaluation error');
         } catch (err) {
-            const nextQ = getFallbackQuestion(role);
+            const nextQ = getFastFallbackQuestion(role, topic, course, branch);
             setEvaluation({
                 score: 88,
                 feedback: `Your technical response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
@@ -487,7 +599,7 @@ export default function InterviewPage() {
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. java, python, phd, bba"
+                            placeholder="e.g. java, c++, python, javascript"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
