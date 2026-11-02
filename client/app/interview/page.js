@@ -20,8 +20,6 @@ export default function InterviewPage() {
     const [evaluation, setEvaluation] = useState(null);
     const [evaluating, setEvaluating] = useState(false);
     
-    const [askedQuestions, setAskedQuestions] = useState([]);
-
     const [cameraActive, setCameraActive] = useState(false);
     const [cameraError, setCameraError] = useState('');
     const videoRef = useRef(null);
@@ -263,7 +261,25 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    // Strict non-repeating fallback question picker using 20-question bank
+    const getStoredAskedQuestions = () => {
+        try {
+            const saved = sessionStorage.getItem('asked_questions');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    };
+
+    const saveAskedQuestion = (newQ) => {
+        try {
+            const current = getStoredAskedQuestions();
+            if (!current.includes(newQ)) {
+                const updated = [...current, newQ];
+                sessionStorage.setItem('asked_questions', JSON.stringify(updated));
+            }
+        } catch (e) {}
+    };
+
     const getFallbackQuestion = (targetRole, targetCourse, targetBranch) => {
         let pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
 
@@ -299,15 +315,16 @@ export default function InterviewPage() {
             }
         }
 
-        const unasked = pool.filter(q => !askedQuestions.includes(q));
+        const asked = getStoredAskedQuestions();
+        const unasked = pool.filter(q => !asked.includes(q) && q !== question);
         let selected;
         if (unasked.length > 0) {
             selected = unasked[Math.floor(Math.random() * unasked.length)];
         } else {
-            setAskedQuestions([]);
+            sessionStorage.removeItem('asked_questions');
             selected = pool[Math.floor(Math.random() * pool.length)];
         }
-        setAskedQuestions(prev => [...prev, selected]);
+        saveAskedQuestion(selected);
         return selected;
     };
 
@@ -321,6 +338,7 @@ export default function InterviewPage() {
 
         const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
         const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+        const currentAsked = getStoredAskedQuestions();
 
         try {
             const token = localStorage.getItem('token');
@@ -335,16 +353,16 @@ export default function InterviewPage() {
                     topic: effectiveTopic, 
                     difficulty, 
                     language: selectedLanguage,
-                    excludeQuestions: askedQuestions 
+                    excludeQuestions: currentAsked 
                 })
             });
 
             if (response.ok) {
                 const data = await response.json();
                 const fetchedQ = data.question;
-                if (fetchedQ && !askedQuestions.includes(fetchedQ)) {
+                if (fetchedQ && !currentAsked.includes(fetchedQ) && fetchedQ !== question) {
                     setQuestion(fetchedQ);
-                    setAskedQuestions(prev => [...prev, fetchedQ]);
+                    saveAskedQuestion(fetchedQ);
                     setIsTimerRunning(true);
                     setLoading(false);
                     return;
@@ -369,6 +387,7 @@ export default function InterviewPage() {
         setEvaluating(true);
         const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
         const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+        const currentAsked = getStoredAskedQuestions();
 
         try {
             const token = localStorage.getItem('token');
@@ -385,7 +404,7 @@ export default function InterviewPage() {
                     answer, 
                     currentDifficulty: difficulty,
                     language: selectedLanguage,
-                    excludeQuestions: askedQuestions 
+                    excludeQuestions: currentAsked 
                 })
             });
 
@@ -394,7 +413,7 @@ export default function InterviewPage() {
                 if (data.evaluation) {
                     setEvaluation(data.evaluation);
                     if (data.evaluation.nextQuestion) {
-                        setAskedQuestions(prev => [...prev, data.evaluation.nextQuestion]);
+                        saveAskedQuestion(data.evaluation.nextQuestion);
                     }
                     setEvaluating(false);
                     return;
@@ -635,7 +654,9 @@ export default function InterviewPage() {
                 ) : (
                     <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '20px' }}>
                         <h3 style={{ color: '#065f46', margin: '0 0 8px 0', fontSize: '16px', fontWeight: '800' }}>📊 Recruiter Evaluation Report</h3>
-                        <p style={{ margin: '0 0 8px 0', fontWeight: '800', color: '#047857', fontSize: '15px' }}>Score: {evaluation.score}/100</p>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: '800', color: '#047857', fontSize: '15px' }}>
+                            <span>Score: {evaluation.score}/100</span>
+                        </p>
                         <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#065f46', lineHeight: '1.5' }}>{evaluation.feedback}</p>
                         <button 
                             onClick={() => {
@@ -656,5 +677,4 @@ export default function InterviewPage() {
             </div>
         </div>
     );
-}
 }
