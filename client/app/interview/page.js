@@ -28,7 +28,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Backup Questions per Role (Strictly for API fallback)
+    // 20 Comprehensive Backup Questions per Role (Strictly for API fallback & uniqueness)
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -263,7 +263,7 @@ export default function InterviewPage() {
         recognition.start();
     };
 
-    // Fallback picker using 20-question bank if API fails
+    // Strict non-repeating fallback question picker
     const getFallbackQuestion = (targetRole) => {
         const pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
         const unasked = pool.filter(q => !askedQuestions.includes(q));
@@ -278,7 +278,6 @@ export default function InterviewPage() {
         return selected;
     };
 
-    // Generate Question via AI API with Fallback
     const handleGenerateQuestion = async (e) => {
         if (e) e.preventDefault();
         setLoading(true);
@@ -310,7 +309,7 @@ export default function InterviewPage() {
             if (response.ok) {
                 const data = await response.json();
                 const fetchedQ = data.question;
-                if (fetchedQ) {
+                if (fetchedQ && !askedQuestions.includes(fetchedQ)) {
                     setQuestion(fetchedQ);
                     setAskedQuestions(prev => [...prev, fetchedQ]);
                     setIsTimerRunning(true);
@@ -318,9 +317,8 @@ export default function InterviewPage() {
                     return;
                 }
             }
-            throw new Error('API Failed');
+            throw new Error('API Failed or Duplicate');
         } catch (err) {
-            // Fallback to 20-question bank if API key fails
             const fallbackQ = getFallbackQuestion(role);
             setQuestion(fallbackQ);
             setIsTimerRunning(true);
@@ -581,15 +579,18 @@ export default function InterviewPage() {
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '14px', lineHeight: '1.5' }}
                         />
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                        {/* Buttons container matching the image layout (Skip and Submit side by side) */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <button 
+                                type="button"
                                 onClick={handleGenerateQuestion}
-                                style={{ background: '#64748b', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                                style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
                             >
                                 Skip / Next Question →
                             </button>
 
                             <button 
+                                type="button"
                                 onClick={handleSubmitAnswer}
                                 disabled={evaluating}
                                 style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
