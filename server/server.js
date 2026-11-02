@@ -10,7 +10,7 @@ const authRoutes = require('./routes/authRoute');
 const arenaRoutes = require('./routes/arenaRoute');
 const resumeRoutes = require('./routes/resumeRoute');
 const reportRoutes = require('./routes/reportRoute'); 
-const recruiterRoutes = require('./routes/recruiterRoute'); // Fixed capital 'R' matching your filename
+const recruiterRoutes = require('./routes/recruiterRoute');
 const verifyTokenAndRole = require('./middleware/roleMiddleware');
 
 const app = express();
@@ -51,7 +51,7 @@ if (MONGO_URI) {
 
 // ==================== Multi-Model Fallback Gemini AI Helper ====================
 async function callGeminiAI(prompt) {
-    let modelsToTry = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash", "gemini-pro"];
+    let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
     
     // Attempt dynamic fetch from Google v1beta Models endpoint to auto-discover active flash models
     try {
@@ -93,7 +93,7 @@ async function callGeminiAI(prompt) {
 // ==================== Direct Interview AI Routes ====================
 app.all(['/api/interview/question', '/api/interview/start', '/api/interview/generate'], async (req, res) => {
     console.log("🔥 Interview Request received on backend!");
-    const topic = req.body.topic || req.query.topic || 'JavaScript';
+    const topic = req.body.topic || req.query.topic || 'General';
     const role = req.body.role || 'Software Developer';
     const difficulty = req.body.difficulty || 'Medium';
     const language = req.body.language || 'English';
@@ -101,11 +101,15 @@ app.all(['/api/interview/question', '/api/interview/start', '/api/interview/gene
     const randomSalt = Math.random().toString(36).substring(2, 9) + Date.now();
 
     try {
-        const prompt = `You are a technical interviewer hiring for a "${role}" position.
-Generate ONE technical interview question specifically testing knowledge on "${topic}".
-Difficulty level: ${difficulty}.
-Target response language: ${language}.
-Session Salt: ${randomSalt}.
+        // Dynamic Prompt supporting Custom Courses/Streams (e.g., Biotech, BBA, PhD, BSc) and Tech Roles
+        const prompt = `You are an expert academic and professional interviewer evaluating a candidate for:
+- Role/Stream: "${role}"
+- Specific Topic/Focus: "${topic}"
+- Difficulty level: "${difficulty}"
+- Target response language: "${language}"
+- Session Salt: ${randomSalt}
+
+Generate ONE high-quality, professional technical/subject-specific interview question tailored precisely to their stream/course. If the stream is Biotech, BBA, PhD, or BSc, ask core domain-specific conceptual questions, NOT software coding unless specified.
 
 CRITICAL: Do NOT repeat or generate any question similar to the following previously asked questions:
 ${JSON.stringify(excludeQuestions)}
@@ -122,13 +126,15 @@ Return ONLY the single plain question text directly without quotes, labels, or m
         });
     } catch (err) {
         console.log("AI Question Generation Fallback Triggered:", err.message);
-        const fallbackQuestions = [
-            `As a ${role}, explain how memory management, event loop microtasks, and garbage collection work in ${topic}.`,
-            `What are the core differences between synchronous and asynchronous execution patterns in ${topic}?`,
-            `How do you diagnose and optimize performance bottlenecks when scaling applications using ${topic}?`,
-            `Describe a complex scenario where you debugged an unexpected production issue in ${topic}.`,
-            `Explain state synchronization, security best practices, and caching strategies in ${topic}.`
+        
+        // Intelligent Fallbacks based on stream keyword
+        let fallbackQuestions = [
+            `Can you explain the core foundational principles and methodologies applied in ${topic || role}?`,
+            `What are the major industry or academic challenges currently faced in ${topic || role}, and how do you address them?`,
+            `Describe a complex scenario or project where you applied concepts of ${topic || role} to achieve a successful outcome.`,
+            `What are the standard quality control, analysis, or testing metrics utilized in ${topic || role}?`
         ];
+
         const selectedFallback = fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
         
         return res.json({ 
@@ -143,17 +149,17 @@ Return ONLY the single plain question text directly without quotes, labels, or m
 app.post('/api/interview/evaluate', async (req, res) => {
     console.log("🔥 Interview Evaluation Request received on backend!");
     try {
-        const { topic, question, answer, currentDifficulty } = req.body;
-        const prompt = `You are an expert interviewer evaluating a technical response for the topic: "${topic || 'Software Development'}".
+        const { topic, role, question, answer, currentDifficulty } = req.body;
+        const prompt = `You are an expert evaluator assessing a candidate response for stream/role: "${role || 'Professional'}" and topic: "${topic || 'General'}".
 Question: "${question}"
 Candidate Answer: "${answer}"
 
 Evaluate the answer and return ONLY a valid JSON string (no markdown, no backticks) in exact format:
-{"score": 85, "critique": "Your answer clearly explains core concepts. To improve, mention production edge cases."}`;
+{"score": 85, "critique": "Your answer clearly explains core concepts. To improve, mention advanced practical applications."}`;
 
         const rawContent = await callGeminiAI(prompt);
         let cleanedContent = rawContent.replace(/```json/g, '').replace(/```/g, '').trim();
-        const result = JSON.parse(cleanedContent || '{"score": 82, "critique": "Solid technical response with clean structure."}');
+        const result = JSON.parse(cleanedContent || '{"score": 82, "critique": "Solid professional response with clean structure."}');
         
         let nextDifficulty = currentDifficulty || 'Medium';
         if (result.score >= 85) nextDifficulty = 'Hard';
@@ -173,7 +179,7 @@ Evaluate the answer and return ONLY a valid JSON string (no markdown, no backtic
             success: true,
             evaluation: {
                 score: 85,
-                feedback: `Your answer effectively covers the core foundational aspects of ${req.body.topic || 'the topic'}. Clean explanation!`,
+                feedback: `Your answer effectively covers the core foundational aspects of ${req.body.topic || req.body.role || 'the subject'}. Great articulation!`,
                 nextDifficulty: req.body.currentDifficulty || 'Medium'
             }
         });
