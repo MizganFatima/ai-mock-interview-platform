@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export default function InterviewPage() {
     const router = useRouter();
     const [role, setRole] = useState('Software Developer');
-    const [topic, setTopic] = useState('JavaScript Async/Await & Closures');
+    const [topic, setTopic] = useState('');
     const [course, setCourse] = useState('');
     const [branch, setBranch] = useState('');
     const [difficulty, setDifficulty] = useState('Beginner');
@@ -26,7 +26,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Backup Questions per Role (Strictly for API fallback)
+    // 20 Comprehensive Backup Questions per Role (Safety fallback only)
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -304,7 +304,7 @@ export default function InterviewPage() {
         setIsTimerRunning(false);
 
         const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
-        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
         const currentAsked = getStoredAskedQuestions();
 
         try {
@@ -353,7 +353,7 @@ export default function InterviewPage() {
         setIsTimerRunning(false);
         setEvaluating(true);
         const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
-        const effectiveTopic = (course.trim() || branch.trim()) ? (branch.trim() || course.trim()) : topic;
+        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
         const currentAsked = getStoredAskedQuestions();
 
         try {
@@ -365,7 +365,7 @@ export default function InterviewPage() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ 
-                    topic: effectiveTopic || effectiveRole, 
+                    topic: effectiveTopic, 
                     role: effectiveRole,
                     question, 
                     answer, 
@@ -391,7 +391,7 @@ export default function InterviewPage() {
             const nextQ = getFallbackQuestion(role);
             setEvaluation({
                 score: 88,
-                feedback: `Your technical response for ${effectiveRole} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
+                feedback: `Your technical response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
                 nextDifficulty: difficulty,
                 nextQuestion: nextQ
             });
@@ -487,7 +487,7 @@ export default function InterviewPage() {
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. JavaScript, React, SQL"
+                            placeholder="e.g. java, python, phd, bba"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
@@ -558,7 +558,7 @@ export default function InterviewPage() {
             <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                     <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
-                        Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic} | Level: {difficulty}
+                        Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic || 'General'} | Level: {difficulty}
                     </span>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <button 
