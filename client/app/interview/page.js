@@ -26,7 +26,99 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Backup Questions per Language / Sub-Topic
+    // 20 Comprehensive Backup Questions per Custom Stream / Domain
+    const customDomainBanks = {
+        "bba": [
+            "What are the core functions of management in modern business organizations?",
+            "Explain Michael Porter's Five Forces model of competitive analysis.",
+            "How do you calculate break-even analysis and why is it important for startups?",
+            "What is the difference between working capital management and capital budgeting?",
+            "Explain the marketing mix (4Ps and 7Ps) with a practical example.",
+            "What are the primary leadership styles and when should you apply them?",
+            "How do supply chain management strategies reduce operational overhead costs?",
+            "What is financial leverage and how does it impact return on equity?",
+            "Explain SWOT analysis and how companies use it for strategic planning.",
+            "What are the key stages of the consumer decision-making process?",
+            "What is balance sheet benchmarking and how are liquidity ratios calculated?",
+            "Explain corporate governance principles and executive accountability.",
+            "How do international trade tariffs affect global supply chain logistics?",
+            "What is matrix organizational structure and how does it manage dual reporting?",
+            "Explain customer acquisition cost (CAC) versus lifetime value (LTV).",
+            "What is change management framework (Kotter’s 8-step model)?",
+            "How do risk management protocols mitigate operational financial volatility?",
+            "Explain brand equity management and positioning strategies.",
+            "What is zero-based budgeting and how does it differ from traditional budgeting?",
+            "How does cross-cultural negotiation impact international joint ventures?"
+        ],
+        "biotech": [
+            "What is the difference between batch culture and continuous culture systems in industrial biotechnology?",
+            "Can you explain the working mechanism and applications of Polymerase Chain Reaction (PCR)?",
+            "How do restriction enzymes and plasmids facilitate recombinant DNA technology?",
+            "What role do microorganisms play in wastewater treatment and bioremediation processes?",
+            "How do you optimize enzyme kinetics and substrate concentration in bioprocess engineering?",
+            "What are the biosafety levels (BSL) and containment procedures required in a microbiology laboratory?",
+            "Explain the principle behind downstream processing and product purification in biomanufacturing.",
+            "How are monoclonal antibodies produced using hybridoma technology?",
+            "What is gel electrophoresis, and how is it used to separate DNA or protein molecules?",
+            "Can you describe a real-world application of plant tissue culture in agricultural biotech?",
+            "Explain CRISPR-Cas9 gene editing mechanism and guide RNA design principles.",
+            "What is biosimilar drug development and how does it differ from generic drugs?",
+            "How do biosensors function in physiological metabolite detection?",
+            "Explain bioreactor scale-up challenges related to mass transfer rates and shear stress.",
+            "What is metabolic engineering and pathway optimization in microbial factories?",
+            "How does protein crystallography help determine 3D structural biology?",
+            "Explain micropropagation techniques in microalgae biofuel production.",
+            "What are cell-free protein synthesis systems and their advantages?",
+            "How do stem cell differentiation pathways work in tissue engineering?",
+            "What are the ethical regulatory frameworks for bio-containment of GMO releases?"
+        ],
+        "phd": [
+            "What is the primary research gap your PhD thesis aims to address?",
+            "How do you formulate a robust null hypothesis and alternative hypothesis for your research?",
+            "What qualitative or quantitative research methodologies are you employing in your study?",
+            "How do you ensure ethical compliance and data integrity in academic research?",
+            "What criteria do you use to perform a critical literature review and identify peer-reviewed sources?",
+            "How do you handle statistical significance and control for confounding variables in your experiments?",
+            "What is the significance of peer review in publishing high-impact academic papers?",
+            "How do you manage large research datasets and ensure reproducibility of your results?",
+            "What theoretical frameworks underpin your domain of advanced study?",
+            "How do you plan to secure funding and grants for post-doctoral research projects?",
+            "Explain systematic sampling versus stratified random sampling methodologies.",
+            "How do you address epistemological assumptions in qualitative research designs?",
+            "What is multivariate analysis of variance (MANOVA) and when is it applied?",
+            "How do you resolve conflicting experimental results from peer literature?",
+            "Explain peer-review revision protocols when responding to Journal Referee reports.",
+            "What is the role of metadata standards in archival open-access data repositories?",
+            "How do you design longitudinal study controls to minimize attrition bias?",
+            "What is patent priority filing strategy during doctoral translational research?",
+            "Explain meta-analysis forest plots and heterogeneity tests (I-squared statistic).",
+            "How do you communicate complex theoretical discoveries to non-specialist stakeholders?"
+        ],
+        "bsc": [
+            "What are the fundamental principles of scientific inquiry and experimental design?",
+            "How do you analyze experimental errors and calculate standard deviations in laboratory reports?",
+            "What is the importance of peer-reviewed scientific literature in modern research?",
+            "How do you handle hazardous chemical reagents and maintain laboratory safety protocols?",
+            "Explain the principles of quantitative versus qualitative chemical and biological analysis.",
+            "What role does mathematical modeling play in interpreting scientific phenomena?",
+            "How do you calibrate precision laboratory instruments like spectrophotometers or microbalances?",
+            "What are the ethical considerations when conducting biological or chemical experiments?",
+            "How do you synthesize complex data sets into a comprehensive scientific conclusion?",
+            "What are the recent advancements in your specific field of basic science study?",
+            "Explain stoichiometry principles in multi-step chemical reaction synthesis.",
+            "What is wave-particle duality and photoelectric emission theory in physics?",
+            "How do chromatographic separation methods isolate bioactive natural compounds?",
+            "Explain thermodynamic laws and enthalpy/entropy equilibrium calculations.",
+            "What are cell membrane transport kinetics (active vs passive diffusion)?",
+            "How do buffer solutions maintain pH homeostasis against acid-base additions?",
+            "Explain atomic absorption spectroscopy principles in trace element detection.",
+            "What are Mendelian inheritance patterns and gene linkage mapping?",
+            "How do differential equations model population growth kinetics?",
+            "Explain crystal field theory and transition metal complex coloration."
+        ]
+    };
+
+    // 20 Comprehensive Backup Questions per Sub-Topic / Language
     const subTopicQuestionBanks = {
         "java": [
             "What are the core features and object-oriented principles of Java?",
@@ -118,7 +210,7 @@ export default function InterviewPage() {
         ]
     };
 
-    // 20 Comprehensive Backup Questions per Role
+    // 20 Comprehensive Backup Questions per Target Role
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -374,17 +466,27 @@ export default function InterviewPage() {
 
     const getFastFallbackQuestion = (targetRole, targetTopic, targetCourse, targetBranch) => {
         let pool = [];
-        const lowerTopic = targetTopic.toLowerCase().trim();
+        const combinedQuery = `${targetTopic} ${targetCourse} ${targetBranch}`.toLowerCase().trim();
 
-        // 1. Check Sub-Topic / Language Bank (Java, C++, Python, JavaScript)
-        for (const key of Object.keys(subTopicQuestionBanks)) {
-            if (lowerTopic.includes(key)) {
-                pool = subTopicQuestionBanks[key];
+        // 1. Check Custom Domain Banks (BBA, Biotech, PhD, BSc)
+        for (const key of Object.keys(customDomainBanks)) {
+            if (combinedQuery.includes(key)) {
+                pool = customDomainBanks[key];
                 break;
             }
         }
 
-        // 2. Fallback to Role Question Bank (20 questions per role)
+        // 2. Check Sub-Topic / Programming Language Banks (Java, C++, Python, JS)
+        if (pool.length === 0) {
+            for (const key of Object.keys(subTopicQuestionBanks)) {
+                if (combinedQuery.includes(key)) {
+                    pool = subTopicQuestionBanks[key];
+                    break;
+                }
+            }
+        }
+
+        // 3. Fallback to Target Role Question Bank
         if (pool.length === 0) {
             pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
         }
@@ -503,7 +605,7 @@ export default function InterviewPage() {
             const nextQ = getFastFallbackQuestion(role, topic, course, branch);
             setEvaluation({
                 score: 88,
-                feedback: `Your technical response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
+                feedback: `Your professional response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
                 nextDifficulty: difficulty,
                 nextQuestion: nextQ
             });
@@ -599,7 +701,7 @@ export default function InterviewPage() {
                             type="text" 
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. java, c++, python, javascript"
+                            placeholder="e.g. java, python, biotech"
                             style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
@@ -637,7 +739,7 @@ export default function InterviewPage() {
                                 type="text" 
                                 value={course}
                                 onChange={(e) => setCourse(e.target.value)}
-                                placeholder="e.g., Engineering, BSc, BBA"
+                                placeholder="e.g., bsc, bba, phd"
                                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                             />
                         </div>
@@ -648,7 +750,7 @@ export default function InterviewPage() {
                                 type="text" 
                                 value={branch}
                                 onChange={(e) => setBranch(e.target.value)}
-                                placeholder="e.g., Civil, Biotech, Finance"
+                                placeholder="e.g., biotec, finance, civil"
                                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                             />
                         </div>
