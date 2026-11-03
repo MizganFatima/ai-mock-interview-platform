@@ -80,7 +80,8 @@ async function callGroqAI(prompt) {
 
 // ==================== Multi-Model Fallback Gemini AI Helper ====================
 async function callGeminiAI(prompt) {
-    let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+    // Updated stable models list to completely bypass 404 version issues
+    let modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastError = null;
 
     for (const modelName of modelsToTry) {
@@ -95,7 +96,7 @@ async function callGeminiAI(prompt) {
         }
     }
 
-    // Try Groq API automatically if Gemini fails or hits quota limit
+    // Try Groq API automatically if all Gemini models fail or hit quota limit
     if (GROQ_API_KEY) {
         try {
             return await callGroqAI(prompt);
