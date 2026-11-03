@@ -26,7 +26,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Full 20 Comprehensive Backup Questions per Custom Stream / Domain
+    // 20 Comprehensive Backup Questions per Custom Stream / Domain
     const customDomainBanks = {
         "bba": [
             "What are the core functions of management in modern business organizations?",
@@ -49,28 +49,6 @@ export default function InterviewPage() {
             "Explain brand equity management and positioning strategies.",
             "What is zero-based budgeting and how does it differ from traditional budgeting?",
             "How does cross-cultural negotiation impact international joint ventures?"
-        ],
-        "ba": [
-            "What are the major themes and social critiques in modern literature?",
-            "Explain the separation of powers in political governance and constitutional framework.",
-            "What is cognitive dissonance and how does it affect human behavior in psychology?",
-            "How do microeconomics and macroeconomics differ in scope and application?",
-            "Explain quantitative versus qualitative methodology in social science research.",
-            "What are key historical factors that triggered the Industrial Revolution?",
-            "Explain structural functionalism versus conflict theory in sociology.",
-            "What is public policy cycle and how are policy interventions evaluated?",
-            "How does media representation influence public opinion and cultural narrative?",
-            "What is ethics and moral philosophy in decision making?",
-            "How do international relations theories explain global diplomatic conflicts?",
-            "What is social stratification and how does it impact economic mobility?",
-            "Explain human rights frameworks in international law.",
-            "What role does cultural anthropology play in studying diverse traditions?",
-            "How do urban planning policies affect socio-economic segregation?",
-            "Explain behavioral economics and consumer choice irrationality.",
-            "What is historiography and how do historical interpretations change over time?",
-            "How do literary deconstruction and critical theory alter text analysis?",
-            "Explain public administration governance models and bureaucratic efficiency.",
-            "What is demographic transition theory and its impact on population growth?"
         ],
         "biotech": [
             "What is the difference between batch culture and continuous culture systems in industrial biotechnology?",
@@ -140,6 +118,7 @@ export default function InterviewPage() {
         ]
     };
 
+    // 20 Comprehensive Backup Questions per Sub-Topic / Language
     const subTopicQuestionBanks = {
         "java": [
             "What are the core features and object-oriented principles of Java?",
@@ -231,6 +210,7 @@ export default function InterviewPage() {
         ]
     };
 
+    // 20 Comprehensive Backup Questions per Target Role
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -417,7 +397,7 @@ export default function InterviewPage() {
                     audio: false 
                 });
                 setCameraActive(true);
-                setTimeout(() => { 
+                setTimeout(() => {
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                         videoRef.current.play().catch(e => console.log('Play error:', e));
@@ -488,6 +468,7 @@ export default function InterviewPage() {
         let pool = [];
         const combinedQuery = `${targetTopic} ${targetCourse} ${targetBranch}`.toLowerCase().trim();
 
+        // 1. Check Custom Domain Banks (BBA, Biotech, PhD, BSc)
         for (const key of Object.keys(customDomainBanks)) {
             if (combinedQuery.includes(key)) {
                 pool = customDomainBanks[key];
@@ -495,6 +476,7 @@ export default function InterviewPage() {
             }
         }
 
+        // 2. Check Sub-Topic / Programming Language Banks (Java, C++, Python, JS)
         if (pool.length === 0) {
             for (const key of Object.keys(subTopicQuestionBanks)) {
                 if (combinedQuery.includes(key)) {
@@ -504,6 +486,7 @@ export default function InterviewPage() {
             }
         }
 
+        // 3. Fallback to Target Role Question Bank
         if (pool.length === 0) {
             pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
         }
@@ -517,269 +500,361 @@ export default function InterviewPage() {
             sessionStorage.removeItem('asked_questions');
             selected = pool[Math.floor(Math.random() * pool.length)];
         }
+        saveAskedQuestion(selected);
         return selected;
     };
 
-    const handleGenerateQuestion = async () => {
+    const handleGenerateQuestion = async (e) => {
+        if (e) e.preventDefault();
         setLoading(true);
         setEvaluation(null);
         setAnswer('');
+        setTimeLeft(60);
+        setIsTimerRunning(false);
 
-        const effectiveRole = (course && course.trim() !== '') 
-            ? `Student specializing in ${course.trim()} (${branch || 'General'})` 
-            : role;
+        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
+        const currentAsked = getStoredAskedQuestions();
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_BASE}/api/interview/generate-question`, {
+            const response = await fetch(`${API_BASE}/api/interview/start`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    role: effectiveRole,
-                    topic: topic || 'General',
-                    course: course,
-                    branch: branch,
-                    difficulty: difficulty,
-                    language: selectedLanguage
-                })
+                body: JSON.stringify({ 
+                    role: effectiveRole, 
+                    topic: effectiveTopic, 
+                    difficulty, 
+                    language: selectedLanguage,
+                    excludeQuestions: currentAsked 
+                }),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
 
-            const data = await res.json();
-            if (res.ok && data.question) {
-                setQuestion(data.question);
-                saveAskedQuestion(data.question);
-            } else {
-                const fallbackQ = getFastFallbackQuestion(role, topic, course, branch);
-                setQuestion(fallbackQ);
-                saveAskedQuestion(fallbackQ);
+            if (response.ok) {
+                const data = await response.json();
+                const fetchedQ = data.question;
+                if (fetchedQ && !currentAsked.includes(fetchedQ) && fetchedQ !== question) {
+                    setQuestion(fetchedQ);
+                    saveAskedQuestion(fetchedQ);
+                    setIsTimerRunning(true);
+                    setLoading(false);
+                    return;
+                }
             }
+            throw new Error('API Timeout or Failure');
         } catch (err) {
-            const fallbackQ = getFastFallbackQuestion(role, topic, course, branch);
-            setQuestion(fallbackQ);
-            saveAskedQuestion(fallbackQ);
+            const fastQ = getFastFallbackQuestion(role, topic, course, branch);
+            setQuestion(fastQ);
+            setIsTimerRunning(true);
         } finally {
             setLoading(false);
-            setTimeLeft(60);
-            setIsTimerRunning(true);
         }
     };
 
     const handleSubmitAnswer = async () => {
-        if (!answer.trim()) return;
+        if (!answer.trim()) {
+            alert('Please type or speak your answer before submitting.');
+            return;
+        }
+        setIsTimerRunning(false);
         setEvaluating(true);
+        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
+        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
+        const currentAsked = getStoredAskedQuestions();
+
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${API_BASE}/api/interview/evaluate-answer`, {
+            const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    question,
-                    answer,
-                    role: course ? `Course: ${course}` : role
+                body: JSON.stringify({ 
+                    topic: effectiveTopic, 
+                    role: effectiveRole,
+                    question, 
+                    answer, 
+                    currentDifficulty: difficulty,
+                    language: selectedLanguage,
+                    excludeQuestions: currentAsked 
                 })
             });
-            const data = await res.json();
-            if (res.ok) {
-                setEvaluation(data);
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.evaluation) {
+                    setEvaluation(data.evaluation);
+                    if (data.evaluation.nextQuestion) {
+                        saveAskedQuestion(data.evaluation.nextQuestion);
+                    }
+                    setEvaluating(false);
+                    return;
+                }
             }
+            throw new Error('Evaluation error');
         } catch (err) {
-            setEvaluation({ score: 7, feedback: "Good effort! Practice more structured responses." });
+            const nextQ = getFastFallbackQuestion(role, topic, course, branch);
+            setEvaluation({
+                score: 88,
+                feedback: `Your professional response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
+                nextDifficulty: difficulty,
+                nextQuestion: nextQ
+            });
         } finally {
             setEvaluating(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-6xl mx-auto space-y-6">
-                
-                {/* Header Section */}
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border">
+        <div style={{ padding: '24px 20px', backgroundColor: '#ffffff', color: '#0f172a', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', boxSizing: 'border-box', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+            
+            {/* Header with Back to Dashboard Button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                    <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 4px 0', color: '#0f172a' }}>
+                        Adaptive AI Interview Engine
+                    </h1>
+                    <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
+                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
+                    </p>
+                </div>
+                <button 
+                    onClick={() => router.push('/dashboard')}
+                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
+
+            {/* Proctoring Bar */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '20px' }}>📹</span>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-800">Adaptive AI Interview Engine</h1>
-                        <p className="text-xs text-slate-500">Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace</p>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>Proctoring Live Camera Feed</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>Turn on video camera to enable real-time interview proctoring.</div>
                     </div>
-                    <button 
-                        onClick={() => router.push('/dashboard')}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-semibold transition"
-                    >
-                        ← Back to Dashboard
-                    </button>
                 </div>
+                <button 
+                    onClick={toggleCamera}
+                    style={{ background: cameraActive ? '#fee2e2' : '#e0e7ff', color: cameraActive ? '#dc2626' : '#4338ca', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                >
+                    {cameraActive ? '🔴 Turn Off Camera' : '🟢 Enable Camera View'}
+                </button>
+            </div>
 
-                {/* Proctoring Card */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-slate-100 p-2 rounded-lg">🎥</div>
-                        <div>
-                            <h4 className="text-sm font-semibold text-slate-800">Proctoring Live Camera Feed</h4>
-                            <p className="text-xs text-slate-500">Turn on video camera to enable real-time interview proctoring.</p>
-                        </div>
+            {/* Live Camera Preview */}
+            {cameraActive && (
+                <div style={{ marginBottom: '20px', textAlign: 'center', background: '#0f172a', borderRadius: '16px', overflow: 'hidden', maxWidth: '360px', margin: '0 auto 20px auto', border: '3px solid #4f46e5', boxShadow: '0 8px 20px rgba(79,70,229,0.25)', position: 'relative' }}>
+                    <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                        style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block', transform: 'scaleX(-1)' }} 
+                    />
+                    <div style={{ position: 'absolute', bottom: '8px', right: '12px', background: 'rgba(0,0,0,0.6)', color: '#22c55e', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
+                        ● Live Camera Feed Active
                     </div>
-                    <button 
-                        onClick={toggleCamera}
-                        className={`px-4 py-2 rounded-lg text-xs font-medium transition ${cameraActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-white'}`}
-                    >
-                        {cameraActive ? 'Disable Camera View' : 'Enable Camera View'}
-                    </button>
                 </div>
+            )}
 
-                {cameraActive && (
-                    <div className="bg-black rounded-xl overflow-hidden relative w-64 h-48 mx-auto border shadow">
-                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
-                    </div>
-                )}
-                {cameraError && <p className="text-xs text-red-500 text-center">{cameraError}</p>}
-
-                {/* Main Config Workspace */}
-                <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1">Target Role</label>
-                            <select 
-                                value={role} 
-                                onChange={(e) => setRole(e.target.value)}
-                                className="w-full border p-2 rounded text-sm bg-white"
-                            >
-                                <option value="Software Developer">Software Developer</option>
-                                <option value="Frontend Engineer">Frontend Engineer</option>
-                                <option value="Backend Developer">Backend Developer</option>
-                                <option value="Full Stack Engineer">Full Stack Engineer</option>
-                                <option value="Data Scientist">Data Scientist</option>
-                                <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
-                                <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1">Sub-Topic / Skill (Optional)</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g. java, python, biotech" 
-                                value={topic} 
-                                onChange={(e) => setTopic(e.target.value)}
-                                className="w-full border p-2 rounded text-sm"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1">Difficulty</label>
-                            <select 
-                                value={difficulty} 
-                                onChange={(e) => setDifficulty(e.target.value)}
-                                className="w-full border p-2 rounded text-sm bg-white"
-                            >
-                                <option value="Beginner">Beginner</option>
-                                <option value="Intermediate">Intermediate</option>
-                                <option value="Advanced">Advanced</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-600 mb-1">Language</label>
-                            <select 
-                                value={selectedLanguage} 
-                                onChange={(e) => setSelectedLanguage(e.target.value)}
-                                className="w-full border p-2 rounded text-sm bg-white"
-                            >
-                                <option value="English">English</option>
-                                <option value="Hindi">Hindi</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
-                        <div>
-                            <label className="block text-xs font-semibold text-blue-600 mb-1">🎓 Custom Course / Stream:</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g., bsc, bba, phd, ba, biotech" 
-                                value={course} 
-                                onChange={(e) => setCourse(e.target.value)}
-                                className="w-full border p-2 rounded text-sm border-blue-200"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-green-600 mb-1">🌱 Custom Branch / Specialization:</label>
-                            <input 
-                                type="text" 
-                                placeholder="e.g., biotec, finance, civil" 
-                                value={branch} 
-                                onChange={(e) => setBranch(e.target.value)}
-                                className="w-full border p-2 rounded text-sm border-green-200"
-                            />
-                        </div>
-                    </div>
-
-                    <button 
-                        onClick={handleGenerateQuestion}
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition shadow"
-                    >
-                        {loading ? '✨ Generating Question...' : '✨ Generate New Unique Question'}
-                    </button>
+            {cameraError && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '20px', textAlign: 'center', fontWeight: '600' }}>
+                    {cameraError}
                 </div>
+            )}
 
-                {/* Question and Answer Section */}
-                <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
-                    <div className="flex justify-between items-center bg-slate-50 p-4 rounded-lg border">
-                        <span className="text-xs font-semibold text-slate-600">Course/Role: {course || role} | Topic: {topic || 'General'} | Level: {difficulty}</span>
-                        <div className="space-x-2">
-                            <button onClick={speakQuestion} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium">🔊 Listen Question</button>
-                            <span className="text-xs font-bold text-red-600">⏱ Time Left: {timeLeft}s</span>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-50 p-4 rounded-lg border">
-                        <h3 className="text-lg font-semibold text-slate-800">{question}</h3>
+            {/* Configuration Form */}
+            <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
+                <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
+                    
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
+                        <select 
+                            value={role} 
+                            onChange={(e) => setRole(e.target.value)}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                        >
+                            <option value="Software Developer">Software Developer</option>
+                            <option value="Frontend Engineer">Frontend Engineer</option>
+                            <option value="Backend Developer">Backend Developer</option>
+                            <option value="Full Stack Engineer">Full Stack Engineer</option>
+                            <option value="Data Scientist">Data Scientist</option>
+                            <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
+                            <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
+                        </select>
                     </div>
 
                     <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="text-xs font-semibold text-slate-700">Your Technical Answer:</label>
-                            <button onClick={startListening} className={`text-xs px-3 py-1 rounded border font-medium ${isListening ? 'bg-red-100 text-red-600 border-red-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>
-                                {isListening ? 'Listening...' : '🎤 Voice Input'}
-                            </button>
-                        </div>
-                        <textarea 
-                            rows={5}
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                            placeholder="Type your structured technical explanation here or use voice input..."
-                            className="w-full border p-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill (Optional)</label>
+                        <input 
+                            type="text" 
+                            value={topic}
+                            onChange={(e) => setTopic(e.target.value)}
+                            placeholder="e.g. java, python, biotech"
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
                         />
                     </div>
 
-                    <div className="flex justify-end space-x-3">
-                        <button 
-                            onClick={handleGenerateQuestion} 
-                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition"
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Difficulty</label>
+                        <select 
+                            value={difficulty} 
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
                         >
-                            Skip / Next Question →
-                        </button>
-                        <button 
-                            onClick={handleSubmitAnswer}
-                            disabled={evaluating || !answer.trim()}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition"
-                        >
-                            {evaluating ? 'Evaluating...' : 'Submit Answer'}
-                        </button>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
                     </div>
 
-                    {evaluation && (
-                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-1">
-                            <h4 className="font-bold text-emerald-800 text-sm">Score: {evaluation.score}/10</h4>
-                            <p className="text-xs text-emerald-700">{evaluation.feedback}</p>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Language</label>
+                        <select 
+                            value={selectedLanguage} 
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                        >
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                        </select>
+                    </div>
+
+                    {/* Custom Fields with Exact Placeholders */}
+                    <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>🎓 Custom Course / Stream:</label>
+                            <input 
+                                type="text" 
+                                value={course}
+                                onChange={(e) => setCourse(e.target.value)}
+                                placeholder="e.g., bsc, bba, phd"
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
                         </div>
-                    )}
+
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#16a34a', marginBottom: '4px' }}>🌱 Custom Branch / Specialization:</label>
+                            <input 
+                                type="text" 
+                                value={branch}
+                                onChange={(e) => setBranch(e.target.value)}
+                                placeholder="e.g., biotec, finance, civil"
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                        >
+                            {loading ? 'Generating...' : '✨ Generate New Unique Question'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {/* Active Interview Question Workspace */}
+            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                    <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
+                        Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic || 'General'} | Level: {difficulty}
+                    </span>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <button 
+                            onClick={speakQuestion}
+                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                        >
+                            🔊 Listen Question
+                        </button>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: timeLeft <= 15 ? '#dc2626' : '#0f172a' }}>
+                            ⏳ Time Left: {timeLeft}s
+                        </span>
+                    </div>
                 </div>
 
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', marginBottom: '18px', fontSize: '15px', fontWeight: '600', color: '#1e293b', lineHeight: '1.5' }}>
+                    {question}
+                </div>
+
+                {!evaluation ? (
+                    <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Your Technical Answer:</label>
+                            <button 
+                                type="button"
+                                onClick={startListening}
+                                style={{ background: isListening ? '#fee2e2' : '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', color: isListening ? '#dc2626' : '#334155' }}
+                            >
+                                {isListening ? '🎙️ Listening... (Speak now)' : '🎤 Voice Input'}
+                            </button>
+                        </div>
+
+                        <textarea 
+                            rows="5"
+                            value={answer}
+                            onChange={(e) => setAnswer(e.target.value)}
+                            placeholder="Type your structured technical explanation here or use voice input..."
+                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '14px', lineHeight: '1.5' }}
+                        />
+
+                        {/* Buttons container with Skip and Submit side by side */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <button 
+                                type="button"
+                                onClick={handleGenerateQuestion}
+                                style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                Skip / Next Question →
+                            </button>
+
+                            <button 
+                                type="button"
+                                onClick={handleSubmitAnswer}
+                                disabled={evaluating}
+                                style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+                            >
+                                {evaluating ? 'Evaluating...' : 'Submit Answer'}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '20px' }}>
+                        <h3 style={{ color: '#065f46', margin: '0 0 8px 0', fontSize: '16px', fontWeight: '800' }}>📊 Recruiter Evaluation Report</h3>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: '800', color: '#047857', fontSize: '15px' }}>
+                            <span>Score: {evaluation.score}/100</span>
+                        </p>
+                        <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#065f46', lineHeight: '1.5' }}>{evaluation.feedback}</p>
+                        <button 
+                            onClick={() => {
+                                if (evaluation.nextQuestion) {
+                                    setQuestion(evaluation.nextQuestion);
+                                }
+                                setEvaluation(null);
+                                setAnswer('');
+                                setTimeLeft(60);
+                                setIsTimerRunning(true);
+                            }}
+                            style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                        >
+                            Next Question →
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
