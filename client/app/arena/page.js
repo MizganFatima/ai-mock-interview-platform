@@ -482,10 +482,7 @@ export default function ArenaPage() {
                 </div>
             </div>
 
-            <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '6px' }}>Coding Arena & AI Practice Hub</h1>
-            <p style={{ color: '#64748b', marginBottom: '20px', fontSize: '13px', fontWeight: '500' }}>
-                Curated Algorithmic Problems for Easy, Medium, and Hard Levels (60+ Unique Challenges).
-            </p>
+            <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '20px' }}>Coding Arena & AI Practice Hub</h1>
 
             {/* Controls */}
             <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #cbd5e1', marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
