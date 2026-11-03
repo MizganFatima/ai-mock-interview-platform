@@ -385,28 +385,6 @@ export default function InterviewPage() {
             "What causes serverless cold start latency and how do you resolve it?",
             "How do you implement automated rollbacks on production deployment failures?",
             "What is VPC peering and how do you configure secure network routes?"
-        ],
-        "Custom / Non-Tech Stream": [
-            "What core domain skills and problem-solving approaches do you apply in your field?",
-            "How do you organize data, research, and analysis to support strategic decision making?",
-            "Explain a key concept from your specialization to a non-specialist audience.",
-            "How do you manage complex project deliverables under strict timelines?",
-            "What strategies do you use for continuous professional learning and skill enhancement?",
-            "How do you resolve interpersonal or cross-functional conflicts in professional settings?",
-            "Explain your methodology for conducting thorough qualitative and quantitative research.",
-            "How do you evaluate ethical considerations in professional decision making?",
-            "What tools and technologies do you leverage to streamline your workflow?",
-            "How do you synthesize large volumes of information into concise executive summaries?",
-            "Describe a challenging project you handled and how you ensured its successful completion.",
-            "How do you measure performance and key outcomes in your area of study?",
-            "What role does effective written and verbal communication play in your domain?",
-            "How do you adapt to shifting industry regulations and compliance standards?",
-            "What innovative trends are currently shaping the future of your professional field?",
-            "How do you prioritize daily tasks when managing multiple parallel responsibilities?",
-            "Describe your approach to receiving constructive feedback and implementing improvements.",
-            "How do you build and maintain collaborative partnerships with peers and mentors?",
-            "What metrics or indicators define excellence and success in your specialization?",
-            "How do you approach critical thinking when faced with ambiguous information?"
         ]
     };
 
@@ -429,6 +407,63 @@ export default function InterviewPage() {
         }
         return () => clearInterval(timer);
     }, [isTimerRunning, timeLeft]);
+
+    const toggleCamera = async () => {
+        setCameraError('');
+        if (!cameraActive) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, 
+                    audio: false 
+                });
+                setCameraActive(true);
+                setTimeout(() => { 
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        videoRef.current.play().catch(e => console.log('Play error:', e));
+                    }
+                }, 300);
+            } catch (err) {
+                setCameraError('Camera access denied. Please allow camera permissions in browser settings.');
+            }
+        } else {
+            if (videoRef.current && videoRef.current.srcObject) {
+                const tracks = videoRef.current.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+            }
+            setCameraActive(false);
+        }
+    };
+
+    const speakQuestion = () => {
+        if ('speechSynthesis' in window && question) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(question);
+            window.speechSynthesis.speak(utterance);
+        }
+    };
+
+    const startListening = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Speech Recognition is not supported in this browser.');
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setAnswer(prev => prev ? `${prev} ${transcript}` : transcript);
+        };
+
+        recognition.start();
+    };
 
     const getStoredAskedQuestions = () => {
         try {
@@ -562,126 +597,189 @@ export default function InterviewPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
+            <div className="max-w-6xl mx-auto space-y-6">
                 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Header Section */}
+                <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border">
                     <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Target Role</label>
-                        <select 
-                            value={role} 
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full border p-2 rounded text-sm"
-                        >
-                            <option value="Software Developer">Software Developer</option>
-                            <option value="Frontend Engineer">Frontend Engineer</option>
-                            <option value="Backend Developer">Backend Developer</option>
-                            <option value="Full Stack Engineer">Full Stack Engineer</option>
-                            <option value="Data Scientist">Data Scientist</option>
-                            <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
-                            <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
-                            <option value="Custom / Non-Tech Stream">Custom / Non-Tech Stream</option>
-                        </select>
+                        <h1 className="text-xl font-bold text-slate-800">Adaptive AI Interview Engine</h1>
+                        <p className="text-xs text-slate-500">Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace</p>
                     </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Sub-Topic / Skill (Optional)</label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g. java, python, biotech" 
-                            value={topic} 
-                            onChange={(e) => setTopic(e.target.value)}
-                            className="w-full border p-2 rounded text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Difficulty</label>
-                        <select 
-                            value={difficulty} 
-                            onChange={(e) => setDifficulty(e.target.value)}
-                            className="w-full border p-2 rounded text-sm"
-                        >
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">Language</label>
-                        <select 
-                            value={selectedLanguage} 
-                            onChange={(e) => setSelectedLanguage(e.target.value)}
-                            className="w-full border p-2 rounded text-sm"
-                        >
-                            <option value="English">English</option>
-                            <option value="Hindi">Hindi</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
-                    <div>
-                        <label className="block text-xs font-semibold text-blue-600 mb-1">🎓 Custom Course / Stream:</label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g., ba, bba, biotech, bsc, phd" 
-                            value={course} 
-                            onChange={(e) => setCourse(e.target.value)}
-                            className="w-full border p-2 rounded text-sm border-blue-200"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-semibold text-green-600 mb-1">🌱 Custom Branch / Specialization:</label>
-                        <input 
-                            type="text" 
-                            placeholder="e.g., finance, civil, microbiology" 
-                            value={branch} 
-                            onChange={(e) => setBranch(e.target.value)}
-                            className="w-full border p-2 rounded text-sm border-green-200"
-                        />
-                    </div>
-                </div>
-
-                <button 
-                    onClick={handleGenerateQuestion}
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
-                >
-                    {loading ? '✨ Generating Question...' : '✨ Generate New Unique Question'}
-                </button>
-
-                <div className="bg-slate-100 p-4 rounded-lg border">
-                    <div className="flex justify-between items-center mb-2 text-xs text-slate-500">
-                        <span>Course/Role: {course || role} | Topic: {topic || 'General'}</span>
-                        <span>⏱ Time Left: {timeLeft}s</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-800">{question}</h3>
-                </div>
-
-                <div>
-                    <textarea 
-                        rows={4}
-                        value={answer}
-                        onChange={(e) => setAnswer(e.target.value)}
-                        placeholder="Type your structured technical or general explanation here..."
-                        className="w-full border p-3 rounded-lg text-sm"
-                    />
                     <button 
-                        onClick={handleSubmitAnswer}
-                        disabled={evaluating || !answer.trim()}
-                        className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium"
+                        onClick={() => router.push('/dashboard')}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-semibold transition"
                     >
-                        {evaluating ? 'Evaluating...' : 'Submit Answer'}
+                        ← Back to Dashboard
                     </button>
                 </div>
 
-                {evaluation && (
-                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-1">
-                        <h4 className="font-bold text-emerald-800 text-sm">Score: {evaluation.score}/10</h4>
-                        <p className="text-xs text-emerald-700">{evaluation.feedback}</p>
+                {/* Proctoring Card */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-slate-100 p-2 rounded-lg">🎥</div>
+                        <div>
+                            <h4 className="text-sm font-semibold text-slate-800">Proctoring Live Camera Feed</h4>
+                            <p className="text-xs text-slate-500">Turn on video camera to enable real-time interview proctoring.</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={toggleCamera}
+                        className={`px-4 py-2 rounded-lg text-xs font-medium transition ${cameraActive ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-emerald-500 hover:bg-emerald-600 text-white'}`}
+                    >
+                        {cameraActive ? 'Disable Camera View' : 'Enable Camera View'}
+                    </button>
+                </div>
+
+                {cameraActive && (
+                    <div className="bg-black rounded-xl overflow-hidden relative w-64 h-48 mx-auto border shadow">
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
                     </div>
                 )}
+                {cameraError && <p className="text-xs text-red-500 text-center">{cameraError}</p>}
+
+                {/* Main Config Workspace */}
+                <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Target Role</label>
+                            <select 
+                                value={role} 
+                                onChange={(e) => setRole(e.target.value)}
+                                className="w-full border p-2 rounded text-sm bg-white"
+                            >
+                                <option value="Software Developer">Software Developer</option>
+                                <option value="Frontend Engineer">Frontend Engineer</option>
+                                <option value="Backend Developer">Backend Developer</option>
+                                <option value="Full Stack Engineer">Full Stack Engineer</option>
+                                <option value="Data Scientist">Data Scientist</option>
+                                <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
+                                <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Sub-Topic / Skill (Optional)</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g. java, python, biotech" 
+                                value={topic} 
+                                onChange={(e) => setTopic(e.target.value)}
+                                className="w-full border p-2 rounded text-sm"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Difficulty</label>
+                            <select 
+                                value={difficulty} 
+                                onChange={(e) => setDifficulty(e.target.value)}
+                                className="w-full border p-2 rounded text-sm bg-white"
+                            >
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Language</label>
+                            <select 
+                                value={selectedLanguage} 
+                                onChange={(e) => setSelectedLanguage(e.target.value)}
+                                className="w-full border p-2 rounded text-sm bg-white"
+                            >
+                                <option value="English">English</option>
+                                <option value="Hindi">Hindi</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+                        <div>
+                            <label className="block text-xs font-semibold text-blue-600 mb-1">🎓 Custom Course / Stream:</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g., bsc, bba, phd, ba, biotech" 
+                                value={course} 
+                                onChange={(e) => setCourse(e.target.value)}
+                                className="w-full border p-2 rounded text-sm border-blue-200"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-green-600 mb-1">🌱 Custom Branch / Specialization:</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g., biotec, finance, civil" 
+                                value={branch} 
+                                onChange={(e) => setBranch(e.target.value)}
+                                className="w-full border p-2 rounded text-sm border-green-200"
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={handleGenerateQuestion}
+                        disabled={loading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition shadow"
+                    >
+                        {loading ? '✨ Generating Question...' : '✨ Generate New Unique Question'}
+                    </button>
+                </div>
+
+                {/* Question and Answer Section */}
+                <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+                    <div className="flex justify-between items-center bg-slate-50 p-4 rounded-lg border">
+                        <span className="text-xs font-semibold text-slate-600">Course/Role: {course || role} | Topic: {topic || 'General'} | Level: {difficulty}</span>
+                        <div className="space-x-2">
+                            <button onClick={speakQuestion} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium">🔊 Listen Question</button>
+                            <span className="text-xs font-bold text-red-600">⏱ Time Left: {timeLeft}s</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-lg border">
+                        <h3 className="text-lg font-semibold text-slate-800">{question}</h3>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-semibold text-slate-700">Your Technical Answer:</label>
+                            <button onClick={startListening} className={`text-xs px-3 py-1 rounded border font-medium ${isListening ? 'bg-red-100 text-red-600 border-red-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>
+                                {isListening ? 'Listening...' : '🎤 Voice Input'}
+                            </button>
+                        </div>
+                        <textarea 
+                            rows={5}
+                            value={answer}
+                            onChange={(e) => setAnswer(e.target.value)}
+                            placeholder="Type your structured technical explanation here or use voice input..."
+                            className="w-full border p-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                        <button 
+                            onClick={handleGenerateQuestion} 
+                            className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition"
+                        >
+                            Skip / Next Question →
+                        </button>
+                        <button 
+                            onClick={handleSubmitAnswer}
+                            disabled={evaluating || !answer.trim()}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition"
+                        >
+                            {evaluating ? 'Evaluating...' : 'Submit Answer'}
+                        </button>
+                    </div>
+
+                    {evaluation && (
+                        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-1">
+                            <h4 className="font-bold text-emerald-800 text-sm">Score: {evaluation.score}/10</h4>
+                            <p className="text-xs text-emerald-700">{evaluation.feedback}</p>
+                        </div>
+                    )}
+                </div>
+
             </div>
         </div>
     );
