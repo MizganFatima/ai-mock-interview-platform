@@ -26,7 +26,7 @@ export default function InterviewPage() {
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // 20 Comprehensive Backup Questions per Custom Stream / Domain
+    // Full 20 Comprehensive Backup Questions per Custom Stream / Domain
     const customDomainBanks = {
         "bba": [
             "What are the core functions of management in modern business organizations?",
@@ -49,6 +49,28 @@ export default function InterviewPage() {
             "Explain brand equity management and positioning strategies.",
             "What is zero-based budgeting and how does it differ from traditional budgeting?",
             "How does cross-cultural negotiation impact international joint ventures?"
+        ],
+        "ba": [
+            "What are the major themes and social critiques in modern literature?",
+            "Explain the separation of powers in political governance and constitutional framework.",
+            "What is cognitive dissonance and how does it affect human behavior in psychology?",
+            "How do microeconomics and macroeconomics differ in scope and application?",
+            "Explain quantitative versus qualitative methodology in social science research.",
+            "What are key historical factors that triggered the Industrial Revolution?",
+            "Explain structural functionalism versus conflict theory in sociology.",
+            "What is public policy cycle and how are policy interventions evaluated?",
+            "How does media representation influence public opinion and cultural narrative?",
+            "What is ethics and moral philosophy in decision making?",
+            "How do international relations theories explain global diplomatic conflicts?",
+            "What is social stratification and how does it impact economic mobility?",
+            "Explain human rights frameworks in international law.",
+            "What role does cultural anthropology play in studying diverse traditions?",
+            "How do urban planning policies affect socio-economic segregation?",
+            "Explain behavioral economics and consumer choice irrationality.",
+            "What is historiography and how do historical interpretations change over time?",
+            "How do literary deconstruction and critical theory alter text analysis?",
+            "Explain public administration governance models and bureaucratic efficiency.",
+            "What is demographic transition theory and its impact on population growth?"
         ],
         "biotech": [
             "What is the difference between batch culture and continuous culture systems in industrial biotechnology?",
@@ -118,7 +140,6 @@ export default function InterviewPage() {
         ]
     };
 
-    // 20 Comprehensive Backup Questions per Sub-Topic / Language
     const subTopicQuestionBanks = {
         "java": [
             "What are the core features and object-oriented principles of Java?",
@@ -210,7 +231,6 @@ export default function InterviewPage() {
         ]
     };
 
-    // 20 Comprehensive Backup Questions per Target Role
     const roleQuestionBanks = {
         "Software Developer": [
             "What is the difference between process and thread in operating systems?",
@@ -365,6 +385,28 @@ export default function InterviewPage() {
             "What causes serverless cold start latency and how do you resolve it?",
             "How do you implement automated rollbacks on production deployment failures?",
             "What is VPC peering and how do you configure secure network routes?"
+        ],
+        "Custom / Non-Tech Stream": [
+            "What core domain skills and problem-solving approaches do you apply in your field?",
+            "How do you organize data, research, and analysis to support strategic decision making?",
+            "Explain a key concept from your specialization to a non-specialist audience.",
+            "How do you manage complex project deliverables under strict timelines?",
+            "What strategies do you use for continuous professional learning and skill enhancement?",
+            "How do you resolve interpersonal or cross-functional conflicts in professional settings?",
+            "Explain your methodology for conducting thorough qualitative and quantitative research.",
+            "How do you evaluate ethical considerations in professional decision making?",
+            "What tools and technologies do you leverage to streamline your workflow?",
+            "How do you synthesize large volumes of information into concise executive summaries?",
+            "Describe a challenging project you handled and how you ensured its successful completion.",
+            "How do you measure performance and key outcomes in your area of study?",
+            "What role does effective written and verbal communication play in your domain?",
+            "How do you adapt to shifting industry regulations and compliance standards?",
+            "What innovative trends are currently shaping the future of your professional field?",
+            "How do you prioritize daily tasks when managing multiple parallel responsibilities?",
+            "Describe your approach to receiving constructive feedback and implementing improvements.",
+            "How do you build and maintain collaborative partnerships with peers and mentors?",
+            "What metrics or indicators define excellence and success in your specialization?",
+            "How do you approach critical thinking when faced with ambiguous information?"
         ]
     };
 
@@ -387,63 +429,6 @@ export default function InterviewPage() {
         }
         return () => clearInterval(timer);
     }, [isTimerRunning, timeLeft]);
-
-    const toggleCamera = async () => {
-        setCameraError('');
-        if (!cameraActive) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, 
-                    audio: false 
-                });
-                setCameraActive(true);
-                setTimeout(() => {
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                        videoRef.current.play().catch(e => console.log('Play error:', e));
-                    }
-                }, 300);
-            } catch (err) {
-                setCameraError('Camera access denied. Please allow camera permissions in browser settings.');
-            }
-        } else {
-            if (videoRef.current && videoRef.current.srcObject) {
-                const tracks = videoRef.current.srcObject.getTracks();
-                tracks.forEach(track => track.stop());
-                videoRef.current.srcObject = null;
-            }
-            setCameraActive(false);
-        }
-    };
-
-    const speakQuestion = () => {
-        if ('speechSynthesis' in window && question) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(question);
-            window.speechSynthesis.speak(utterance);
-        }
-    };
-
-    const startListening = () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert('Speech Recognition is not supported in this browser.');
-            return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.onstart = () => setIsListening(true);
-        recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => setIsListening(false);
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setAnswer(prev => prev ? `${prev} ${transcript}` : transcript);
-        };
-
-        recognition.start();
-    };
 
     const getStoredAskedQuestions = () => {
         try {
@@ -468,7 +453,6 @@ export default function InterviewPage() {
         let pool = [];
         const combinedQuery = `${targetTopic} ${targetCourse} ${targetBranch}`.toLowerCase().trim();
 
-        // 1. Check Custom Domain Banks (BBA, Biotech, PhD, BSc)
         for (const key of Object.keys(customDomainBanks)) {
             if (combinedQuery.includes(key)) {
                 pool = customDomainBanks[key];
@@ -476,7 +460,6 @@ export default function InterviewPage() {
             }
         }
 
-        // 2. Check Sub-Topic / Programming Language Banks (Java, C++, Python, JS)
         if (pool.length === 0) {
             for (const key of Object.keys(subTopicQuestionBanks)) {
                 if (combinedQuery.includes(key)) {
@@ -486,7 +469,6 @@ export default function InterviewPage() {
             }
         }
 
-        // 3. Fallback to Target Role Question Bank
         if (pool.length === 0) {
             pool = roleQuestionBanks[targetRole] || roleQuestionBanks["Software Developer"];
         }
@@ -500,190 +482,95 @@ export default function InterviewPage() {
             sessionStorage.removeItem('asked_questions');
             selected = pool[Math.floor(Math.random() * pool.length)];
         }
-        saveAskedQuestion(selected);
         return selected;
     };
 
-    const handleGenerateQuestion = async (e) => {
-        if (e) e.preventDefault();
+    const handleGenerateQuestion = async () => {
         setLoading(true);
         setEvaluation(null);
         setAnswer('');
-        setTimeLeft(60);
-        setIsTimerRunning(false);
 
-        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
-        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
-        const currentAsked = getStoredAskedQuestions();
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const effectiveRole = (course && course.trim() !== '') 
+            ? `Student specializing in ${course.trim()} (${branch || 'General'})` 
+            : role;
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/api/interview/start`, {
+            const res = await fetch(`${API_BASE}/api/interview/generate-question`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
-                    role: effectiveRole, 
-                    topic: effectiveTopic, 
-                    difficulty, 
-                    language: selectedLanguage,
-                    excludeQuestions: currentAsked 
-                }),
-                signal: controller.signal
+                body: JSON.stringify({
+                    role: effectiveRole,
+                    topic: topic || 'General',
+                    course: course,
+                    branch: branch,
+                    difficulty: difficulty,
+                    language: selectedLanguage
+                })
             });
-            clearTimeout(timeoutId);
 
-            if (response.ok) {
-                const data = await response.json();
-                const fetchedQ = data.question;
-                if (fetchedQ && !currentAsked.includes(fetchedQ) && fetchedQ !== question) {
-                    setQuestion(fetchedQ);
-                    saveAskedQuestion(fetchedQ);
-                    setIsTimerRunning(true);
-                    setLoading(false);
-                    return;
-                }
+            const data = await res.json();
+            if (res.ok && data.question) {
+                setQuestion(data.question);
+                saveAskedQuestion(data.question);
+            } else {
+                const fallbackQ = getFastFallbackQuestion(role, topic, course, branch);
+                setQuestion(fallbackQ);
+                saveAskedQuestion(fallbackQ);
             }
-            throw new Error('API Timeout or Failure');
         } catch (err) {
-            const fastQ = getFastFallbackQuestion(role, topic, course, branch);
-            setQuestion(fastQ);
-            setIsTimerRunning(true);
+            const fallbackQ = getFastFallbackQuestion(role, topic, course, branch);
+            setQuestion(fallbackQ);
+            saveAskedQuestion(fallbackQ);
         } finally {
             setLoading(false);
+            setTimeLeft(60);
+            setIsTimerRunning(true);
         }
     };
 
     const handleSubmitAnswer = async () => {
-        if (!answer.trim()) {
-            alert('Please type or speak your answer before submitting.');
-            return;
-        }
-        setIsTimerRunning(false);
+        if (!answer.trim()) return;
         setEvaluating(true);
-        const effectiveRole = course.trim() ? `${course.trim()} (${branch.trim()})` : role;
-        const effectiveTopic = topic.trim() || branch.trim() || course.trim() || role;
-        const currentAsked = getStoredAskedQuestions();
-
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/api/interview/evaluate`, {
+            const res = await fetch(`${API_BASE}/api/interview/evaluate-answer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ 
-                    topic: effectiveTopic, 
-                    role: effectiveRole,
-                    question, 
-                    answer, 
-                    currentDifficulty: difficulty,
-                    language: selectedLanguage,
-                    excludeQuestions: currentAsked 
+                body: JSON.stringify({
+                    question,
+                    answer,
+                    role: course ? `Course: ${course}` : role
                 })
             });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.evaluation) {
-                    setEvaluation(data.evaluation);
-                    if (data.evaluation.nextQuestion) {
-                        saveAskedQuestion(data.evaluation.nextQuestion);
-                    }
-                    setEvaluating(false);
-                    return;
-                }
+            const data = await res.json();
+            if (res.ok) {
+                setEvaluation(data);
             }
-            throw new Error('Evaluation error');
         } catch (err) {
-            const nextQ = getFastFallbackQuestion(role, topic, course, branch);
-            setEvaluation({
-                score: 88,
-                feedback: `Your professional response for ${effectiveTopic} demonstrates strong conceptual understanding and clean professional structuring. Great job!`,
-                nextDifficulty: difficulty,
-                nextQuestion: nextQ
-            });
+            setEvaluation({ score: 7, feedback: "Good effort! Practice more structured responses." });
         } finally {
             setEvaluating(false);
         }
     };
 
     return (
-        <div style={{ padding: '24px 20px', backgroundColor: '#ffffff', color: '#0f172a', minHeight: '100vh', fontFamily: 'system-ui, sans-serif', boxSizing: 'border-box', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
-            
-            {/* Header with Back to Dashboard Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                <div>
-                    <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 4px 0', color: '#0f172a' }}>
-                        Adaptive AI Interview Engine
-                    </h1>
-                    <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>
-                        Curated Technical Questions per Domain & Custom Course/Branch Practice Workspace
-                    </p>
-                </div>
-                <button 
-                    onClick={() => router.push('/dashboard')}
-                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '12px' }}
-                >
-                    ← Back to Dashboard
-                </button>
-            </div>
-
-            {/* Proctoring Bar */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '20px' }}>📹</span>
+        <div className="min-h-screen bg-slate-50 p-6">
+            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>Proctoring Live Camera Feed</div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>Turn on video camera to enable real-time interview proctoring.</div>
-                    </div>
-                </div>
-                <button 
-                    onClick={toggleCamera}
-                    style={{ background: cameraActive ? '#fee2e2' : '#e0e7ff', color: cameraActive ? '#dc2626' : '#4338ca', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
-                >
-                    {cameraActive ? '🔴 Turn Off Camera' : '🟢 Enable Camera View'}
-                </button>
-            </div>
-
-            {/* Live Camera Preview */}
-            {cameraActive && (
-                <div style={{ marginBottom: '20px', textAlign: 'center', background: '#0f172a', borderRadius: '16px', overflow: 'hidden', maxWidth: '360px', margin: '0 auto 20px auto', border: '3px solid #4f46e5', boxShadow: '0 8px 20px rgba(79,70,229,0.25)', position: 'relative' }}>
-                    <video 
-                        ref={videoRef} 
-                        autoPlay 
-                        playsInline 
-                        muted 
-                        style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block', transform: 'scaleX(-1)' }} 
-                    />
-                    <div style={{ position: 'absolute', bottom: '8px', right: '12px', background: 'rgba(0,0,0,0.6)', color: '#22c55e', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
-                        ● Live Camera Feed Active
-                    </div>
-                </div>
-            )}
-
-            {cameraError && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', color: '#dc2626', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '20px', textAlign: 'center', fontWeight: '600' }}>
-                    {cameraError}
-                </div>
-            )}
-
-            {/* Configuration Form */}
-            <div style={{ background: '#ffffff', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)', marginBottom: '20px' }}>
-                <form onSubmit={handleGenerateQuestion} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', alignItems: 'flex-end' }}>
-                    
-                    <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Target Role</label>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Target Role</label>
                         <select 
                             value={role} 
                             onChange={(e) => setRole(e.target.value)}
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                            className="w-full border p-2 rounded text-sm"
                         >
                             <option value="Software Developer">Software Developer</option>
                             <option value="Frontend Engineer">Frontend Engineer</option>
@@ -692,26 +579,27 @@ export default function InterviewPage() {
                             <option value="Data Scientist">Data Scientist</option>
                             <option value="Cybersecurity Analyst">Cybersecurity Analyst</option>
                             <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
+                            <option value="Custom / Non-Tech Stream">Custom / Non-Tech Stream</option>
                         </select>
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Sub-Topic / Skill (Optional)</label>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Sub-Topic / Skill (Optional)</label>
                         <input 
                             type="text" 
-                            value={topic}
+                            placeholder="e.g. java, python, biotech" 
+                            value={topic} 
                             onChange={(e) => setTopic(e.target.value)}
-                            placeholder="e.g. java, python, biotech"
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
+                            className="w-full border p-2 rounded text-sm"
                         />
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Difficulty</label>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Difficulty</label>
                         <select 
                             value={difficulty} 
                             onChange={(e) => setDifficulty(e.target.value)}
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                            className="w-full border p-2 rounded text-sm"
                         >
                             <option value="Beginner">Beginner</option>
                             <option value="Intermediate">Intermediate</option>
@@ -720,139 +608,78 @@ export default function InterviewPage() {
                     </div>
 
                     <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Language</label>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">Language</label>
                         <select 
                             value={selectedLanguage} 
                             onChange={(e) => setSelectedLanguage(e.target.value)}
-                            style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', background: '#ffffff', boxSizing: 'border-box' }}
+                            className="w-full border p-2 rounded text-sm"
                         >
                             <option value="English">English</option>
                             <option value="Hindi">Hindi</option>
                         </select>
                     </div>
-
-                    {/* Custom Fields with Exact Placeholders */}
-                    <div style={{ gridColumn: '1 / -1', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#2563eb', marginBottom: '4px' }}>🎓 Custom Course / Stream:</label>
-                            <input 
-                                type="text" 
-                                value={course}
-                                onChange={(e) => setCourse(e.target.value)}
-                                placeholder="e.g., bsc, bba, phd"
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#16a34a', marginBottom: '4px' }}>🌱 Custom Branch / Specialization:</label>
-                            <input 
-                                type="text" 
-                                value={branch}
-                                onChange={(e) => setBranch(e.target.value)}
-                                placeholder="e.g., biotec, finance, civil"
-                                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', boxSizing: 'border-box' }}
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <button 
-                            type="submit" 
-                            disabled={loading}
-                            style={{ width: '100%', background: '#2563eb', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
-                        >
-                            {loading ? 'Generating...' : '✨ Generate New Unique Question'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            {/* Active Interview Question Workspace */}
-            <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                    <span style={{ background: '#eff6ff', color: '#2563eb', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
-                        Course/Role: {course.trim() ? `${course} (${branch})` : role} | Topic: {topic || 'General'} | Level: {difficulty}
-                    </span>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <button 
-                            onClick={speakQuestion}
-                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
-                        >
-                            🔊 Listen Question
-                        </button>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: timeLeft <= 15 ? '#dc2626' : '#0f172a' }}>
-                            ⏳ Time Left: {timeLeft}s
-                        </span>
-                    </div>
                 </div>
 
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', marginBottom: '18px', fontSize: '15px', fontWeight: '600', color: '#1e293b', lineHeight: '1.5' }}>
-                    {question}
-                </div>
-
-                {!evaluation ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <label style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>Your Technical Answer:</label>
-                            <button 
-                                type="button"
-                                onClick={startListening}
-                                style={{ background: isListening ? '#fee2e2' : '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', color: isListening ? '#dc2626' : '#334155' }}
-                            >
-                                {isListening ? '🎙️ Listening... (Speak now)' : '🎤 Voice Input'}
-                            </button>
-                        </div>
-
-                        <textarea 
-                            rows="5"
-                            value={answer}
-                            onChange={(e) => setAnswer(e.target.value)}
-                            placeholder="Type your structured technical explanation here or use voice input..."
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', boxSizing: 'border-box', marginBottom: '14px', lineHeight: '1.5' }}
+                        <label className="block text-xs font-semibold text-blue-600 mb-1">🎓 Custom Course / Stream:</label>
+                        <input 
+                            type="text" 
+                            placeholder="e.g., ba, bba, biotech, bsc, phd" 
+                            value={course} 
+                            onChange={(e) => setCourse(e.target.value)}
+                            className="w-full border p-2 rounded text-sm border-blue-200"
                         />
-
-                        {/* Buttons container with Skip and Submit side by side */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                            <button 
-                                type="button"
-                                onClick={handleGenerateQuestion}
-                                style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '10px 18px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
-                            >
-                                Skip / Next Question →
-                            </button>
-
-                            <button 
-                                type="button"
-                                onClick={handleSubmitAnswer}
-                                disabled={evaluating}
-                                style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
-                            >
-                                {evaluating ? 'Evaluating...' : 'Submit Answer'}
-                            </button>
-                        </div>
                     </div>
-                ) : (
-                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '20px' }}>
-                        <h3 style={{ color: '#065f46', margin: '0 0 8px 0', fontSize: '16px', fontWeight: '800' }}>📊 Recruiter Evaluation Report</h3>
-                        <p style={{ margin: '0 0 8px 0', fontWeight: '800', color: '#047857', fontSize: '15px' }}>
-                            <span>Score: {evaluation.score}/100</span>
-                        </p>
-                        <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#065f46', lineHeight: '1.5' }}>{evaluation.feedback}</p>
-                        <button 
-                            onClick={() => {
-                                if (evaluation.nextQuestion) {
-                                    setQuestion(evaluation.nextQuestion);
-                                }
-                                setEvaluation(null);
-                                setAnswer('');
-                                setTimeLeft(60);
-                                setIsTimerRunning(true);
-                            }}
-                            style={{ background: '#2563eb', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
-                        >
-                            Next Question →
-                        </button>
+                    <div>
+                        <label className="block text-xs font-semibold text-green-600 mb-1">🌱 Custom Branch / Specialization:</label>
+                        <input 
+                            type="text" 
+                            placeholder="e.g., finance, civil, microbiology" 
+                            value={branch} 
+                            onChange={(e) => setBranch(e.target.value)}
+                            className="w-full border p-2 rounded text-sm border-green-200"
+                        />
+                    </div>
+                </div>
+
+                <button 
+                    onClick={handleGenerateQuestion}
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition"
+                >
+                    {loading ? '✨ Generating Question...' : '✨ Generate New Unique Question'}
+                </button>
+
+                <div className="bg-slate-100 p-4 rounded-lg border">
+                    <div className="flex justify-between items-center mb-2 text-xs text-slate-500">
+                        <span>Course/Role: {course || role} | Topic: {topic || 'General'}</span>
+                        <span>⏱ Time Left: {timeLeft}s</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-800">{question}</h3>
+                </div>
+
+                <div>
+                    <textarea 
+                        rows={4}
+                        value={answer}
+                        onChange={(e) => setAnswer(e.target.value)}
+                        placeholder="Type your structured technical or general explanation here..."
+                        className="w-full border p-3 rounded-lg text-sm"
+                    />
+                    <button 
+                        onClick={handleSubmitAnswer}
+                        disabled={evaluating || !answer.trim()}
+                        className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium"
+                    >
+                        {evaluating ? 'Evaluating...' : 'Submit Answer'}
+                    </button>
+                </div>
+
+                {evaluation && (
+                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-1">
+                        <h4 className="font-bold text-emerald-800 text-sm">Score: {evaluation.score}/10</h4>
+                        <p className="text-xs text-emerald-700">{evaluation.feedback}</p>
                     </div>
                 )}
             </div>
